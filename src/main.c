@@ -177,7 +177,6 @@ int main(void)
     //required to wake-up the processor.
     HAL_UART_Transmit_DMA(&huart4, bufftx, BUFF_SIZE);
     __WFI();
-    HAL_UART_Transmit_DMA(&huart4, bufftx, BUFF_SIZE);
   }
 
 }
