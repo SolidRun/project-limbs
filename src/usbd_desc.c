@@ -117,7 +117,7 @@ __ALIGN_BEGIN static const struct configuration_1 USBD_Composite_CfgFSDesc __ALI
 #endif
 #if (NUM_OF_CDC_UARTS > 2)
     /* CDC3 */
-    CDC_DESCRIPTOR(/* Command ITF */ 0x04, /* Data ITF */ 0x05, /* Command EP */ 0x86, /* DataOut EP */ 0x05, /* DataIn EP */ 0x85)
+    CDC_DESCRIPTOR(/* Command ITF */ 0x04, /* Data ITF */ 0x05, /* Command EP */ 0x86, /* DataOut EP */ 0x05, /* DataIn EP */ 0x87)
 #endif
   },
 };
