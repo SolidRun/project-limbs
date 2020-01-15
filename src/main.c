@@ -112,8 +112,6 @@ void rprint (const char *str) {
 #endif
 
 
-static void MX_GPTO_Init(void){ __GPIOA_CLK_ENABLE(); }
-
 int main(void)
 {
   /*
@@ -168,6 +166,7 @@ int main(void)
   //HAL_Delay(200);
 #endif
 
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
   // inifinit loop
   for (;;)
   {
@@ -178,6 +177,87 @@ int main(void)
     HAL_UART_Transmit_DMA(&huart4, bufftx, BUFF_SIZE);
     __WFI();
   }
+
+}
+
+static void MX_GPTO_Init(void)
+{
+
+    /* STM Pins Description
+    PA2 - TX2                     PB0 - ADC_IN8
+    PA3 - RX2                     PB1 - ADC_IN9
+    PA4  - SPI1_CS                PB2 - SPI1_SWITCH
+    PA5  - SPI1_SCK               PB3 - VBAT_CONNECTED
+    PA6  - SPI1_MISO              PB4 - MASTER_RESET
+    PA7  - SPI1_MOSI              PB5 - PWR_BTN
+    PA9  - TX1                    PB6 - I2C1_SCK
+    PA10 - RX1                    PB7 - I2C1_SDA
+    PA11 - USB_FT_DM (mUSB)
+    PA12 - USB_FT_DP (mUSB)
+    PA15 - FORCE_RECOVERY_BOOT
+
+    GPIO_MODE_INPUT   // Input Floating Mode
+    GPIO_MODE_OUTPUT_PP < Output Push Pull Mode >
+    GPIO_MODE_OUTPUT_OD < Output Open Drain Mode >
+    GPIO_MODE_AF_PP  < Alternate Function Push Pull Mode >
+    GPIO_MODE_AF_OD
+    */
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    /* GPIO Ports Clock Enable */
+    __GPIOA_CLK_ENABLE();
+    __GPIOB_CLK_ENABLE();
+
+    /*Configure GPIO pin Output Level */
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_SET);
+
+    /*Configure GPIO pin Output Level */
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+
+    /*Configure GPIO pins : PA2 PA3 (USART2) */
+    GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
+    //GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF1_USART2;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /*Configure GPIO pins : PA4 PA5 PA6 PA7 */
+    GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /*Configure GPIO pins : PB2 PB4(MASTER_RESET)  PB5(PWR_BTN) */
+    GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_4|GPIO_PIN_5;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    /*Configure GPIO pin : PA15 */
+    GPIO_InitStruct.Pin = GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /*Configure GPIO pins : PB3 */
+    GPIO_InitStruct.Pin = GPIO_PIN_3;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    /*Configure GPIO pins : PB6 PB7 */
+    GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF1_I2C1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 
