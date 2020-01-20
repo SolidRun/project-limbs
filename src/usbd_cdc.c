@@ -26,11 +26,23 @@
 #include "usbd_desc.h"
 #include "usbd_composite.h"
 #include "config.h"
+#include <string.h>
 
 /* USB handle declared in main.c */
 extern USBD_HandleTypeDef USBD_Device;
 
-extern UART_HandleTypeDef huart4;
+/* CDC buffers declaration for VCP */
+static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length);
+#define BUF_SIZE 8
+// TX
+uint8_t vcp_tx[BUF_SIZE];
+uint16_t countTx=0;
+uint16_t writePointerTx=0, readPointerTx=0;
+// RX
+uint8_t vcp_rx[BUF_SIZE];
+uint16_t countRx=0;
+uint16_t writePointerRx=0, readPointerRx=0;
+
 /* local function prototyping */
 
 static uint8_t USBD_CDC_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx);
@@ -86,7 +98,6 @@ static const struct
   USART_TypeDef *Instance;
   uint8_t data_in_ep, data_out_ep, command_ep, command_itf;
 } parameters[NUM_OF_CDC_UARTS] =
-// Normally we can use 7 endpoints with CDC_FS, 3 for each CDC/VCPs ?
 // Endpoint Address
 {
 #if (NUM_OF_CDC_UARTS > 0)
@@ -124,7 +135,7 @@ static const struct
 // context this base array contain all CDC_devices Handle
 static USBD_CDC_HandleTypeDef context[NUM_OF_CDC_UARTS];
 
-// it's function call from composite.c to init, in from fun USBD_Composite_Init()
+// it's function call from composite.c to init, from fun USBD_Composite_Init()
 static uint8_t USBD_CDC_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
   USBD_CDC_HandleTypeDef *hcdc = context;
@@ -133,7 +144,7 @@ static uint8_t USBD_CDC_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   for (index = 0; index < NUM_OF_CDC_UARTS; index++,hcdc++)
   {
     if (index == 2){ // #VCP
-
+      // TO DO
     #if 1
       /* Open EP IN */
       USBD_LL_OpenEP(pdev, parameters[index].data_in_ep, USBD_EP_TYPE_BULK, USB_FS_MAX_PACKET_SIZE); // when use in_ep=0x85 the acm2 Not work fine
@@ -197,7 +208,7 @@ static uint8_t USBD_CDC_DeInit (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   {
     if (index == 2){ // #VCP
       // it's should be 2 when we know what to do here !!
-      // hcdc=
+      // TO DO
     }
     else
     {
@@ -235,8 +246,7 @@ static uint8_t USBD_CDC_Setup (USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *r
 
       if (index == 2){ // #VCP
         // VCP Setup
-
-
+        // TO DO
       }
       else
       {
@@ -284,9 +294,9 @@ static uint8_t USBD_CDC_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
   {
     #if 0
     // Data in UART3
-    if (parameters[index].data_in_ep == 0x85)
+    if (parameters[index].data_in_ep == 0x85) // #VCP
     {
-
+      // TO DO
       break;
     }
     #endif
@@ -301,32 +311,83 @@ static uint8_t USBD_CDC_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
   return USBD_OK;
 }
 
-
-static int8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
+//static int8_t vcp_cmd_control(USBD_CDC_HandleTypeDef *hcdc, uint8_t* pbuf, uint16_t length) // #VCP
+static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
 {
   /* reprint */
+  enum CMD_ID{
+        RESET,
+        POWERON,
+        POWEROFF,
+        SENSORS,
+        CURRENT,
+        VOLTAGE,
+        BATTERY,
+        CMD_NUM
+  };
 
+  //#define CMD_NUM 7
+  char *arr_cmd[] = {
+     "reset",
+     "poweron",
+     "poweroff",
+     "sensors",
+     "current",
+     "voltage",
+     "battery"
+   };
 
-  return (USBD_OK);
-  /* USER CODE BEGIN 5 */
-
-  switch(*pbuf)
+  // CMD string to CMD_ID
+  int8_t cmd_id=-1;
+  for (int8_t i=0; i < CMD_NUM; i++)
   {
-    case 1:
-
-      break;
-    case 2:
-
-    break;
-
-    default:
-      break;
+    cmd_id=i;
+    if(strcmp((char*)pbuf,(char*)arr_cmd[i]) == 0) break;
   }
 
-  return (USBD_OK);
-  /* USER CODE END 5 */
-}
+    // USER CODE BEGIN 5
+    switch(cmd_id)
+    {
+      case RESET:
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_RESET);
+        HAL_Delay(100);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
+        // reprint
+        //HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)res, 4);
+        break;
+      case POWERON:
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
+        HAL_Delay(100);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
+        break;
+      case POWEROFF:
+        //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
+        HAL_Delay(10000);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
+        break;
+      case SENSORS:
+        // use ADC
+        break;
+      case CURRENT:
+        // use ADC
+        break;
+      case VOLTAGE:
+        // use ADC
+        break;
+      case BATTERY:
+        // use ADC
+        break;
+      case CMD_NUM:
+        break;
+      default:
+        return (USBD_FAIL);
+        break;
+    }
 
+    return (USBD_OK);
+    /* USER CODE END 5 */
+}
 
 const char hi[]="hi\n\r";
 const char TEST[]="ls\n\r";
@@ -342,45 +403,55 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
     {
       /* Get the received data length */
       RxLength = USBD_LL_GetRxDataSize (pdev, epnum);
+      HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)hcdc->OutboundBuffer, RxLength);
 
-      #if 1
-        if (hcdc->UartHandle.Instance == USART3) // #VCP
+    if (hcdc->UartHandle.Instance == USART2) // #VCP
+    {
+      for ( uint8_t i=0; i< (uint8_t)RxLength; i++)
+      {
+        #if 1
+        // reset cmd_id
+        if ( (char) hcdc->OutboundBuffer[i] == '1' )
         {
-        /* #VCP data received from USB in the Buffer  (uint8_t *)hcdc->OutboundBuffer, RxLength */
-          //vcp_cmd_control((uint8_t *)hcdc->OutboundBuffer, RxLength);
-          hcdc--;
-          HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)hcdc->OutboundBuffer, RxLength);
-          hcdc++;
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_RESET);
+          HAL_Delay(100);
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
         }
-        else
+        // poweron cmd_id
+        if ( (char) hcdc->OutboundBuffer[i] == '2' )
         {
-        /* hand the data to the HAL */
-          //HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)res, 4);
-          //hcdc++;
-          HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)hcdc->OutboundBuffer, RxLength);
-          //HAL_UART_Transmit_DMA(&hcdc->UartHandle, res, 7);
-          /*
-          .Instance = USART2,
-          .data_in_ep  = 0x83,
-          .data_out_ep = 0x03,
-          .command_ep  = 0x84,
-          .command_itf = 0x02,
-          */
-          /*
-          HAL_PCD_EP_Transmit(pdev->pData, 0x83, (uint8_t *)TEST, 4);
-          HAL_PCD_EP_Transmit(pdev->pData, 0x03, (uint8_t *)TEST, 4);
-          hcdc->InboundBuffer[0]='l';
-          hcdc->InboundBuffer[1]='s';
-          hcdc->InboundBuffer[2]='\n';
-          */
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
+          HAL_Delay(100);
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
+        }
+        // poweroff cmd_id
+        if ( (char) hcdc->OutboundBuffer[i] == '3' )
+        {
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
+          HAL_Delay(10000);
+          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
+        }
+        #endif
+
+        if ( (char) hcdc->OutboundBuffer[i] == '\n' || (char) hcdc->OutboundBuffer[i] == ' ' || writePointerRx >= BUF_SIZE )
+        {
+          vcp_cmd_control(vcp_rx,writePointerRx);
+          writePointerRx=0;
+          countRx=0;
+        }
+        else {
+
+          vcp_rx[writePointerRx]=hcdc->OutboundBuffer[i];
+          writePointerRx+=1;
+          countRx++;
         }
 
-      #else
-        /* hand the data to the HAL */
-        HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)hcdc->OutboundBuffer, RxLength);
-      #endif
 
-      break;
+      }
+
+    }
+
+    break;
     }
   }
 
