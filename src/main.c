@@ -35,82 +35,9 @@ void rprint (const char *str);
 USBD_HandleTypeDef USBD_Device;
 static UART_HandleTypeDef s_UARTHandle;
 
-#define BUFF_SIZE 10
-uint8_t bufftx[BUFF_SIZE]="Hello!!\n\r";
-UART_HandleTypeDef huart2;
 /* for use Transmit uart2 */
 #include "usbd_cdc.h"
 #include "config.h"
-//extern USBD_CDC_HandleTypeDef context[NUM_OF_CDC_UARTS];
-UART_HandleTypeDef huart4;
-/* End*/
-
-void rprint (const char *str) {
-  #if 1
-    int i = 0;
-    for (int j=0;j<100;j++){
-      while (str[i]) {
-        //HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout)
-          HAL_UART_Transmit(&s_UARTHandle, (unsigned char *)&str[i], 1, HAL_MAX_DELAY);
-          if (str[i] == '\n') HAL_UART_Transmit(&s_UARTHandle, (uint8_t*)"\r", 1, HAL_MAX_DELAY);
-          i++;
-        }
-        i=0;
-    }
-  #endif
-  #if 0
-    char *msg = "Hello Nucleo Fun!\n\r";
-    HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 0xFFFF);
-  #endif
-}
-
-#if 0
-  void MX_USART2_UART_Init(void)
-  {
-      huart2.Instance = USART2;
-      huart2.Init.BaudRate = 115200;
-      huart2.Init.WordLength = UART_WORDLENGTH_8B;
-      huart2.Init.StopBits = UART_STOPBITS_1;
-      huart2.Init.Parity = UART_PARITY_NONE;
-      huart2.Init.Mode = UART_MODE_TX_RX;
-      huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-      HAL_UART_Init(&huart2);
-  }
-#endif
-
-#if 0
-    __USART2_CLK_ENABLE();
-    __GPIOA_CLK_ENABLE();
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-    GPIO_InitStructure.Pin = GPIO_PIN_2;
-    GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStructure.Alternate = GPIO_AF1_USART2;
-    GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
-    GPIO_InitStructure.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    GPIO_InitStructure.Pin = GPIO_PIN_3;
-    GPIO_InitStructure.Mode = GPIO_MODE_AF_OD;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    s_UARTHandle.Instance        = USART2;
-    s_UARTHandle.Init.BaudRate   = 115200;
-    s_UARTHandle.Init.WordLength = UART_WORDLENGTH_8B;
-    s_UARTHandle.Init.StopBits   = UART_STOPBITS_1;
-    s_UARTHandle.Init.Parity     = UART_PARITY_NONE;
-    s_UARTHandle.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
-    s_UARTHandle.Init.Mode       = UART_MODE_TX_RX;
-
-    s_UARTHandle.State = HAL_UART_STATE_BUSY;
-    if (HAL_UART_Init(&s_UARTHandle) != HAL_OK){
-        rprint ("HAL Not Ok there\n");
-        while(1){};//asm("bkpt 255");
-      }
-    rprint ("Hello there\n");
-
-#endif
-
 
 int main(void)
 {
@@ -122,6 +49,7 @@ int main(void)
   __disable_irq();
   /* STM32F0xx HAL library initialization */
   HAL_Init();
+  MX_GPTO_Init();
   /* configure the system clock to get correspondent USB clock source */
   SystemClock_Config();
 
@@ -148,25 +76,7 @@ int main(void)
   __enable_irq();
 
 /* Debug Range  */
-#if 1
-  MX_GPTO_Init();
-  //MX_USART2_UART_Init();
-  //HAL_UART_MspInit(&huart2);
-  //UART_HandleTypeDef huart3 = (context[0]).UartHandle;
-  //USBD_CDC_HandleTypeDef *hcdc2 = context;
-  //hcdc2++;
-  //UART_HandleTypeDef huart3 = hcdc2->UartHandle;
-  //UART_HandleTypeDef huart3 = context[1].UartHandle;
-#endif
 
-#if 1
-  //HAL_UART_Transmit_DMA(&huart3, bufftx, BUFF_SIZE);
-  HAL_UART_Transmit_DMA(&huart4, bufftx, BUFF_SIZE);
-  //HAL_UART_Transmit(&huart3, bufftx, BUFF_SIZE, 100);
-  //HAL_Delay(200);
-#endif
-
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
   // inifinit loop
   for (;;)
   {
@@ -174,7 +84,6 @@ int main(void)
     // use WFI for the interupt and sleep mode, wakeup ....
     //WFI is targeted at entering either standby, dormant or shutdown mode, where an interrupt is
     //required to wake-up the processor.
-    HAL_UART_Transmit_DMA(&huart4, bufftx, BUFF_SIZE);
     __WFI();
   }
 
