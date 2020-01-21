@@ -319,22 +319,24 @@ static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
         RESET,
         POWERON,
         POWEROFF,
-        SENSORS,
+        POWERBTN,
+        VBATON,
+        VBATOFF,
         CURRENT,
         VOLTAGE,
-        BATTERY,
         CMD_NUM
   };
 
-  //#define CMD_NUM 7
+  //#define CMD_NUM 8
   char *arr_cmd[] = {
      "reset",
      "poweron",
      "poweroff",
-     "sensors",
+     "powerbtn",
+     "vbaton",
+     "vbatoff",
      "current",
-     "voltage",
-     "battery"
+     "voltage"
    };
 
   // CMD string to CMD_ID
@@ -352,8 +354,6 @@ static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_RESET);
         HAL_Delay(100);
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
-        // reprint
-        //HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)res, 4);
         break;
       case POWERON:
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
@@ -361,13 +361,18 @@ static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
         break;
       case POWEROFF:
-        //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
         HAL_Delay(10000);
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
         break;
-      case SENSORS:
-        // use ADC
+      case POWERBTN:
+        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
+        break;
+      case VBATON:
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3,GPIO_PIN_SET);
+        break;
+      case VBATOFF:
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3,GPIO_PIN_RESET);
         break;
       case CURRENT:
         // use ADC
@@ -375,13 +380,10 @@ static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
       case VOLTAGE:
         // use ADC
         break;
-      case BATTERY:
-        // use ADC
-        break;
       case CMD_NUM:
         break;
       default:
-        return (USBD_FAIL);
+        //return (USBD_FAIL);
         break;
     }
 
