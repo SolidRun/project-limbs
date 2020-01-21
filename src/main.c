@@ -93,8 +93,8 @@ static void MX_GPTO_Init(void)
 {
 
     /* STM Pins Description
-    PA2 - TX2                     PB0 - ADC_IN8
-    PA3 - RX2                     PB1 - ADC_IN9
+    PA2 - TX2                     PB0 - ADC_IN8 (VOLTAGE)
+    PA3 - RX2                     PB1 - ADC_IN9 (CURRENT)
     PA4  - SPI1_CS                PB2 - SPI1_SWITCH
     PA5  - SPI1_SCK               PB3 - VBAT_CONNECTED
     PA6  - SPI1_MISO              PB4 - MASTER_RESET
@@ -118,7 +118,7 @@ static void MX_GPTO_Init(void)
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_3, GPIO_PIN_SET);
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
@@ -140,8 +140,8 @@ static void MX_GPTO_Init(void)
     GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /*Configure GPIO pins : PB2 PB4(MASTER_RESET)  PB5(PWR_BTN) */
-    GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_4|GPIO_PIN_5;
+    /*Configure GPIO pins : PB2 PB3(VBAT_CONNECTED) PB4(MASTER_RESET)  PB5(PWR_BTN) */
+    GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
@@ -154,8 +154,8 @@ static void MX_GPTO_Init(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /*Configure GPIO pins : PB3 */
-    GPIO_InitStruct.Pin = GPIO_PIN_3;
+    /*Configure GPIO pins : PB0 PB1 */
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
