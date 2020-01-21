@@ -33,7 +33,7 @@ extern USBD_HandleTypeDef USBD_Device;
 
 /* CDC buffers declaration for VCP */
 static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length);
-#define BUF_SIZE 8
+#define BUF_SIZE 9
 // TX
 uint8_t vcp_tx[BUF_SIZE];
 uint16_t countTx=0;
@@ -311,6 +311,23 @@ static uint8_t USBD_CDC_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
   return USBD_OK;
 }
 
+int my_strcmp(char *strg1, char *strg2)
+{
+    while( ( *strg1 != '\0' && *strg2 != '\0' ) && *strg1 == *strg2 )
+    {
+        strg1++;
+        strg2++;
+    }
+    if(*strg1 == *strg2)
+    {
+        return 0; // strings are identical
+    }
+    else
+    {
+        return *strg1 - *strg2;
+    }
+}
+
 //static int8_t vcp_cmd_control(USBD_CDC_HandleTypeDef *hcdc, uint8_t* pbuf, uint16_t length) // #VCP
 static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
 {
@@ -344,7 +361,8 @@ static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
   for (int8_t i=0; i < CMD_NUM; i++)
   {
     cmd_id=i;
-    if(strcmp((char*)pbuf,(char*)arr_cmd[i]) == 0) break;
+    //if(strcmp((char*)pbuf,(char*)arr_cmd[i]) == 0) break;
+    if(my_strcmp((char*)pbuf,(char*)arr_cmd[i]) == 0) break;
   }
 
     // USER CODE BEGIN 5
@@ -394,6 +412,7 @@ static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
 const char hi[]="hi\n\r";
 const char TEST[]="ls\n\r";
 uint8_t res[7]="ls\n\r";
+uint8_t new_line[3]="\n\r";
 static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
   USBD_CDC_HandleTypeDef *hcdc = context;
@@ -403,55 +422,68 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
   {
     if (parameters[index].data_out_ep == epnum)
     {
-      /* Get the received data length */
-      RxLength = USBD_LL_GetRxDataSize (pdev, epnum);
-      HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)hcdc->OutboundBuffer, RxLength);
+        /* Get the received data length */
+        RxLength = USBD_LL_GetRxDataSize (pdev, epnum);
+        HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)hcdc->OutboundBuffer, RxLength);
 
-    if (hcdc->UartHandle.Instance == USART2) // #VCP
-    {
-      for ( uint8_t i=0; i< (uint8_t)RxLength; i++)
+      if (hcdc->UartHandle.Instance == USART2) // #VCP
       {
-        #if 1
-        // reset cmd_id
-        if ( (char) hcdc->OutboundBuffer[i] == '1' )
+        uint8_t * outbuff = (uint8_t *)hcdc->OutboundBuffer;
+        for ( uint8_t i=0; i< (uint8_t)RxLength; i++,outbuff++)
         {
-          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_RESET);
-          HAL_Delay(100);
-          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
-        }
-        // poweron cmd_id
-        if ( (char) hcdc->OutboundBuffer[i] == '2' )
-        {
-          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
-          HAL_Delay(100);
-          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
-        }
-        // poweroff cmd_id
-        if ( (char) hcdc->OutboundBuffer[i] == '3' )
-        {
-          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
-          HAL_Delay(10000);
-          HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
-        }
-        #endif
+          // reprint
+          if ( (char) *outbuff == '\n' || (char) *outbuff == (char)'\r' || *outbuff == (uint8_t)'\n' || (uint8_t)*outbuff == 10 || (uint8_t)*outbuff == 13 || (char) *outbuff == 'q' )
+            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,new_line, 2);
+          else
+            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)hcdc->OutboundBuffer, RxLength);
 
-        if ( (char) hcdc->OutboundBuffer[i] == '\n' || (char) hcdc->OutboundBuffer[i] == ' ' || writePointerRx >= BUF_SIZE )
-        {
-          vcp_cmd_control(vcp_rx,writePointerRx);
-          writePointerRx=0;
-          countRx=0;
-        }
-        else {
+          #if 1
+          // reset cmd_id
+          if ( (char) *outbuff == '1' )
+          {
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_RESET);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
+          }
+          // poweron cmd_id
+          if ( (char) *outbuff == '2' )
+          {
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
+          }
+          // poweroff cmd_id
+          if ( (char) *outbuff == '3' )
+          {
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
+            HAL_Delay(10000);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
+          }
+          // powerbtn
+          if ( (char) *outbuff == '4' )
+          {
+            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
+          }
+          #endif
 
-          vcp_rx[writePointerRx]=hcdc->OutboundBuffer[i];
-          writePointerRx+=1;
-          countRx++;
-        }
+          //if ( (char) *outbuff == '\n' || (char) *outbuff == '\r' || (uint8_t) *outbuff == 10 || (uint8_t) *outbuff == 13 || (char) *outbuff == '-' || (uint8_t) *outbuff == 32 || writePointerRx >= BUF_SIZE )
+          if ( (char) *outbuff == '\n' || (char) *outbuff == ' ' ||(char) *outbuff == '-' || countRx >= BUF_SIZE-1 )
+          {
+            vcp_rx[writePointerRx]=(uint8_t)'\0';
+            vcp_cmd_control(vcp_rx,countRx);
+            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,vcp_rx,countRx);
+            writePointerRx=0;
+            countRx=0;
+          }
+          else {
+            vcp_rx[writePointerRx]=(uint8_t)*outbuff;
+            writePointerRx++;
+            countRx++;
+          }
 
+        }
 
       }
-
-    }
 
     break;
     }
