@@ -33,7 +33,7 @@
 /* USER CODE END Includes */
 
 extern ADC_HandleTypeDef hadc;
-//extern ADC_ChannelConfTypeDef sConfig ;
+extern ADC_ChannelConfTypeDef sConfig ;
 
 /* USER CODE BEGIN Private defines */
 

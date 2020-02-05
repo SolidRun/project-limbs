@@ -20,16 +20,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
 
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
 ADC_HandleTypeDef hadc;
-//ADC_ChannelConfTypeDef sConfig = {0};
+ADC_ChannelConfTypeDef sConfig = {0};
 /* ADC init function */
 void MX_ADC_Init(void)
 {
-  ADC_ChannelConfTypeDef sConfig = {0};
+  //ADC_ChannelConfTypeDef sConfig = {0};
 
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
@@ -62,13 +58,13 @@ void MX_ADC_Init(void)
   }
   /** Configure for the selected ADC regular channel to be converted.
   */
-  /*
+
   sConfig.Channel = ADC_CHANNEL_9;
   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
   {
     Error_Handler_ADC();
   }
-  */
+
 }
 
 void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
