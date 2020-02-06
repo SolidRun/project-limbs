@@ -24,26 +24,15 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-//#include "main.h"
 #include "stm32f0xx_hal_adc.h"
 #include "stm32f0xx_hal.h"
 #include "stm32f042x6.h"
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
 
 extern ADC_HandleTypeDef hadc;
-//extern ADC_ChannelConfTypeDef sConfig ;
-
-/* USER CODE BEGIN Private defines */
-
-/* USER CODE END Private defines */
+extern ADC_ChannelConfTypeDef sConfig ;
 
 void MX_ADC_Init(void);
 void Error_Handler_ADC(void);
-/* USER CODE BEGIN Prototypes */
-
-/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }

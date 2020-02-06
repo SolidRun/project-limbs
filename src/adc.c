@@ -20,16 +20,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
 
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
 ADC_HandleTypeDef hadc;
-//ADC_ChannelConfTypeDef sConfig = {0};
+ADC_ChannelConfTypeDef sConfig = {0};
 /* ADC init function */
 void MX_ADC_Init(void)
 {
-  ADC_ChannelConfTypeDef sConfig = {0};
+  //ADC_ChannelConfTypeDef sConfig = {0};
 
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
@@ -68,7 +64,7 @@ void MX_ADC_Init(void)
   {
     Error_Handler_ADC();
   }
-  
+
 }
 
 void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
@@ -95,9 +91,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN ADC1_MspInit 1 */
-
-  /* USER CODE END ADC1_MspInit 1 */
   }
 }
 

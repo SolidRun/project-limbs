@@ -36,7 +36,8 @@
 extern USBD_HandleTypeDef USBD_Device;
 
 /* CDC buffers declaration for VCP */
-static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length);
+static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length);
+//static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length);
 #define BUF_SIZE 11
 // TX
 uint8_t vcp_tx[BUF_SIZE];
@@ -54,13 +55,6 @@ uint16_t writePointerRx=0, readPointerRx=0;
   uint16_t adcvalue=0;
   #define ADC_VALUE_SIZE 7
   char adc_buff[ADC_VALUE_SIZE];
-  /* calculate voltage adc factore
-    Vin = (ADC_RESOLUTION * ADC_Value[12Bit]) * (R1+R2/R2)
-    Vin = [Vref/(2^12) * (R2+R1/R2)] * ADC_Value
-    Factore = 3.3 / 4096 *(150/1k+150) = 0.0061767578125
-    ADC_RESOLUTION = 0.0008056640625
-  */
-  #define VOLTAGE_ADC_FACTORE 0.00645
 #endif
 
 /* local function prototyping */
@@ -331,6 +325,7 @@ static uint8_t USBD_CDC_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
   return USBD_OK;
 }
 
+// help functions
 int my_strcmp(char *strg1, char *strg2)
 {
     while( ( *strg1 != '\0' && *strg2 != '\0' ) && *strg1 == *strg2 )
@@ -361,6 +356,8 @@ uint16_t ADC_Read(void)
   adcVal = HAL_ADC_GetValue(&hadc);
   // stop ADC conversion and disable ADC
   HAL_ADC_Stop(&hadc);
+  sConfig.Rank = ADC_RANK_NONE;
+  HAL_ADC_ConfigChannel(&hadc, &sConfig);
   return adcVal;
 }
 
@@ -378,6 +375,7 @@ uint16_t ADC_Read(void)
   }
 #endif
 
+// help functions
 uint8_t StringToInt(char a[]) {
   uint8_t c, n;
   n = 0;
@@ -387,10 +385,57 @@ uint8_t StringToInt(char a[]) {
   return n;
 }
 
+void Current_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
+{
+  /** Configure for the selected ADC regular channel to be converted.**/
+    sConfig.Channel = ADC_CHANNEL_9;
+    sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
+    if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+    {
+      Error_Handler_ADC();
+    }
+    /* read adc value */
+    adcvalue=ADC_Read();
+    double adc_current=(double)adcvalue * CURRENT_ADC_FACTORE;
+    /* convert double to Str */
+    itoa(adc_current,adc_buff,10);
+    const char * point=".";
+    char lower_buff[4];
+    uint16_t lower_adc_current=(adc_current-(double)StringToInt(adc_buff))*1000;
+    itoa(lower_adc_current,lower_buff,10);
+    /* show result value */
+    const char * A_new_line="A\r\n";
+    char * str_adc_current=strcat(strcat(adc_buff,point) ,strcat(lower_buff, A_new_line));
+    USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)str_adc_current, ADC_VALUE_SIZE+2);
+}
+
+void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
+{
+  /** Configure for the selected ADC regular channel to be converted.**/
+    sConfig.Channel = ADC_CHANNEL_8;
+    sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
+    if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+      Error_Handler_ADC();
+    /* read adc value */
+    adcvalue=ADC_Read();
+    double adc_voltage=(double)adcvalue * VOLTAGE_ADC_FACTORE;
+    /* convert double to Str */
+    //char upper_buff[ADC_VALUE_SIZE];
+    itoa(adc_voltage,adc_buff,10);
+    const char * point=".";
+    char lower_buff[4];
+    uint16_t lower_adc_voltage=(adc_voltage-(double)StringToInt(adc_buff))*1000;
+    itoa(lower_adc_voltage,lower_buff,10);
+    /* show result value */
+    const char * v_new_line="v\r\n";
+    char * str_adc_voltage=strcat(strcat(adc_buff,point) ,strcat(lower_buff, v_new_line));
+    USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)str_adc_voltage, ADC_VALUE_SIZE+2);
+}
+
 #endif
 
-//static int8_t vcp_cmd_control(USBD_CDC_HandleTypeDef *hcdc, uint8_t* pbuf, uint16_t length) // #VCP
-static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
+//static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
+static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length) // #VCP
 {
   /* reprint */
   enum CMD_ID{
@@ -414,12 +459,13 @@ static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
      "vbaton",
      "vbatoff",
      "current",
-     "voltage"
+     "voltage",
+     "else"
    };
 
   // CMD string to CMD_ID
   int8_t cmd_id=-1;
-  for (int8_t i=0; i < CMD_NUM; i++)
+  for (int8_t i=0; i <= CMD_NUM; i++)
   {
     cmd_id=i;
     //if(strcmp((char*)pbuf,(char*)arr_cmd[i]) == 0) break;
@@ -454,13 +500,13 @@ static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3,GPIO_PIN_RESET);
         break;
       case CURRENT:
-        // use ADC
+        #if ADC_ENABLE
+          Current_Cmd(pdev,ep_addr);
+        #endif
         break;
       case VOLTAGE:
         #if ADC_ENABLE
-          //adcvalue=ADC_Read();
-          //sprintf(adc_buff,"%d\n",adcvalue);
-          //USBD_LL_Transmit(pdev,parameters[1].data_in_ep,(uint8_t *)adc_buff, ADC_VALUE_SIZE);
+          Voltage_Cmd(pdev,ep_addr);
         #endif
         break;
       case CMD_NUM:
@@ -505,7 +551,7 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
             USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)hcdc->OutboundBuffer, RxLength);
           #endif
 
-          #if 1
+          #if 0
           // reset cmd_id
           if ( (char) *outbuff == '1' )
           {
@@ -536,6 +582,41 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
           if ( (char) *outbuff == '5' )
           {
 
+            sConfig.Channel = ADC_CHANNEL_8;
+            if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+            {
+              Error_Handler_ADC();
+            }
+
+            adcvalue=ADC_Read();
+            double d_adcvalue=(double)adcvalue * VOLTAGE_ADC_FACTORE;
+            //itoa(adcvalue,adc_buff,10);
+            //USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)adc_buff, ADC_VALUE_SIZE);
+            itoa(d_adcvalue,adc_buff,10);
+
+            const char * point=".";
+            char adc_buff2[4];
+            uint16_t d_adcvalue2=(d_adcvalue-(double)StringToInt(adc_buff))*1000;
+            itoa(d_adcvalue2,adc_buff2,10);
+
+            const char * v_new_line="v\r\n";
+            char * str_adc_value=strcat(strcat(adc_buff,point) ,strcat(adc_buff2, v_new_line));
+            //char * str_adc_value=strcat(adc_buff, v_new_line);
+            //sprintf(adc_buff,"%hd\n",(short)adcvalue);
+            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)str_adc_value, ADC_VALUE_SIZE+2);
+
+          }
+          // current
+          if ( (char) *outbuff == '6' )
+          {
+            /** Configure for the selected ADC regular channel to be converted.
+            */
+
+            sConfig.Channel = ADC_CHANNEL_9;
+            if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+            {
+              Error_Handler_ADC();
+            }
             adcvalue=ADC_Read();
             double d_adcvalue=(double)adcvalue * VOLTAGE_ADC_FACTORE;
             //itoa(adcvalue,adc_buff,10);
@@ -553,13 +634,13 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
             //sprintf(adc_buff,"%hd\n",(short)adcvalue);
             USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)str_adc_value, ADC_VALUE_SIZE+2);
           }
+
           #endif
 
-          //if ( (char) *outbuff == '\n' || (char) *outbuff == '\r' || (uint8_t) *outbuff == 10 || (uint8_t) *outbuff == 13 || (char) *outbuff == '-' || (uint8_t) *outbuff == 32 || writePointerRx >= BUF_SIZE )
           if ( (char) *outbuff == '\n' || (char) *outbuff == ' ' ||(char) *outbuff == '-' || countRx >= BUF_SIZE-1 )
           {
             vcp_rx[writePointerRx]=(uint8_t)'\0';
-            vcp_cmd_control(vcp_rx,countRx);
+            vcp_cmd_control(pdev,parameters[index].data_in_ep,vcp_rx,countRx);
             #if USART2_VCP_REPRINT_ENABLE
               USBD_LL_Transmit(pdev,parameters[index].data_in_ep,vcp_rx,countRx);
             #endif
