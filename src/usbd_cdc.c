@@ -447,6 +447,8 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         VBATOFF,
         CURRENT,
         VOLTAGE,
+        SPI_SW_STM,
+        SPI_SW_COM,
         CMD_NUM
   };
 
@@ -460,6 +462,8 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
      "vbatoff",
      "current",
      "voltage",
+     "spi_sw_stm",
+     "spi_sw_com",
      "else"
    };
 
@@ -508,6 +512,12 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         #if ADC_ENABLE
           Voltage_Cmd(pdev,ep_addr);
         #endif
+        break;
+      case SPI_SW_STM:
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_SET);
+        break;
+      case SPI_SW_COM:
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_RESET);
         break;
       case CMD_NUM:
         break;
