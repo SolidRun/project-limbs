@@ -52,7 +52,8 @@ SRCS += \
   ./startup_stm32f0xx.c \
 	./stm32f0xx_hal_adc.c \
 	./stm32f0xx_hal_adc_ex.c \
-	./stm32f0xx_ll_adc.c
+	./stm32f0xx_ll_adc.c \
+	./adc.c
 
 DEFINES += \
   -DSTM32F042x6

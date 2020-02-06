@@ -27,13 +27,17 @@
 #include "usbd_composite.h"
 #include "config.h"
 #include <string.h>
+#include <stdio.h>
+#include <math.h>
+
+#include "adc.h"
 
 /* USB handle declared in main.c */
 extern USBD_HandleTypeDef USBD_Device;
 
 /* CDC buffers declaration for VCP */
 static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length);
-#define BUF_SIZE 9
+#define BUF_SIZE 11
 // TX
 uint8_t vcp_tx[BUF_SIZE];
 uint16_t countTx=0;
@@ -42,6 +46,22 @@ uint16_t writePointerTx=0, readPointerTx=0;
 uint8_t vcp_rx[BUF_SIZE];
 uint16_t countRx=0;
 uint16_t writePointerRx=0, readPointerRx=0;
+
+/* ADC Help */
+#if ADC_ENABLE
+  void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc);
+  uint16_t ADC_Read(void);
+  uint16_t adcvalue=0;
+  #define ADC_VALUE_SIZE 7
+  char adc_buff[ADC_VALUE_SIZE];
+  /* calculate voltage adc factore
+    Vin = (ADC_RESOLUTION * ADC_Value[12Bit]) * (R1+R2/R2)
+    Vin = [Vref/(2^12) * (R2+R1/R2)] * ADC_Value
+    Factore = 3.3 / 4096 *(150/1k+150) = 0.0061767578125
+    ADC_RESOLUTION = 0.0008056640625
+  */
+  #define VOLTAGE_ADC_FACTORE 0.00645
+#endif
 
 /* local function prototyping */
 
@@ -328,6 +348,47 @@ int my_strcmp(char *strg1, char *strg2)
     }
 }
 
+#if ADC_ENABLE
+
+uint16_t ADC_Read(void)
+{
+  uint16_t adcVal;
+  // enable ADC and start ADC conversion
+  HAL_ADC_Start(&hadc);
+  // waith until ADC conversion to be completed
+  HAL_ADC_PollForConversion(&hadc, 1);
+  // get ADC value from ADC register
+  adcVal = HAL_ADC_GetValue(&hadc);
+  // stop ADC conversion and disable ADC
+  HAL_ADC_Stop(&hadc);
+  return adcVal;
+}
+
+#if ADC_IT_MODE
+  /* if you need use it mode can write the code in the fun HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+    and can read the adc value adcVal = HAL_ADC_GetValue(&hadc);
+    start convertion use Interrupts Mode
+  */
+  HAL_ADC_Start_IT(&hadc);
+  // Callback Fun when ADC conversion completed
+  void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+  {
+    adcvalue = HAL_ADC_GetValue(&hadc);
+    HAL_ADC_Start_IT(&hadc);
+  }
+#endif
+
+uint8_t StringToInt(char a[]) {
+  uint8_t c, n;
+  n = 0;
+  for (c = 0; a[c] != '\0'; c++) {
+    n = n * 10 + a[c] - '0';
+  }
+  return n;
+}
+
+#endif
+
 //static int8_t vcp_cmd_control(USBD_CDC_HandleTypeDef *hcdc, uint8_t* pbuf, uint16_t length) // #VCP
 static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
 {
@@ -396,7 +457,11 @@ static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
         // use ADC
         break;
       case VOLTAGE:
-        // use ADC
+        #if ADC_ENABLE
+          //adcvalue=ADC_Read();
+          //sprintf(adc_buff,"%d\n",adcvalue);
+          //USBD_LL_Transmit(pdev,parameters[1].data_in_ep,(uint8_t *)adc_buff, ADC_VALUE_SIZE);
+        #endif
         break;
       case CMD_NUM:
         break;
@@ -431,11 +496,14 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
         uint8_t * outbuff = (uint8_t *)hcdc->OutboundBuffer;
         for ( uint8_t i=0; i< (uint8_t)RxLength; i++,outbuff++)
         {
+           //0:when need to use the USART2 and VCP in the same interface ACM1
+          #if USART2_VCP_REPRINT_ENABLE
           // reprint
-          if ( (char) *outbuff == '\n' || (char) *outbuff == (char)'\r' || *outbuff == (uint8_t)'\n' || (uint8_t)*outbuff == 10 || (uint8_t)*outbuff == 13 || (char) *outbuff == 'q' )
+          if ( (char) *outbuff == '\n' || (char) *outbuff == (char)'\r' || *outbuff == (uint8_t)'\n' || (uint8_t)*outbuff == 10 || (uint8_t)*outbuff == 13)
             USBD_LL_Transmit(pdev,parameters[index].data_in_ep,new_line, 2);
           else
             USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)hcdc->OutboundBuffer, RxLength);
+          #endif
 
           #if 1
           // reset cmd_id
@@ -464,6 +532,27 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
           {
             HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
           }
+          // voltage
+          if ( (char) *outbuff == '5' )
+          {
+
+            adcvalue=ADC_Read();
+            double d_adcvalue=(double)adcvalue * VOLTAGE_ADC_FACTORE;
+            //itoa(adcvalue,adc_buff,10);
+            //USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)adc_buff, ADC_VALUE_SIZE);
+            itoa(d_adcvalue,adc_buff,10);
+
+            const char * point=".";
+            char adc_buff2[4];
+            uint16_t d_adcvalue2=(d_adcvalue-(double)StringToInt(adc_buff))*1000;
+            itoa(d_adcvalue2,adc_buff2,10);
+
+            const char * v_new_line="v\r\n";
+            char * str_adc_value=strcat(strcat(adc_buff,point) ,strcat(adc_buff2, v_new_line));
+            //char * str_adc_value=strcat(adc_buff, v_new_line);
+            //sprintf(adc_buff,"%hd\n",(short)adcvalue);
+            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)str_adc_value, ADC_VALUE_SIZE+2);
+          }
           #endif
 
           //if ( (char) *outbuff == '\n' || (char) *outbuff == '\r' || (uint8_t) *outbuff == 10 || (uint8_t) *outbuff == 13 || (char) *outbuff == '-' || (uint8_t) *outbuff == 32 || writePointerRx >= BUF_SIZE )
@@ -471,7 +560,9 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
           {
             vcp_rx[writePointerRx]=(uint8_t)'\0';
             vcp_cmd_control(vcp_rx,countRx);
-            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,vcp_rx,countRx);
+            #if USART2_VCP_REPRINT_ENABLE
+              USBD_LL_Transmit(pdev,parameters[index].data_in_ep,vcp_rx,countRx);
+            #endif
             writePointerRx=0;
             countRx=0;
           }
