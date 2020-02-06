@@ -33,7 +33,9 @@
 #include "usbd_cdc.h"
 
 #include "config.h"
-#include "adc.h"
+#if ADC_ENABLE
+  #include "adc.h"
+#endif
 
 static void SystemClock_Config(void);
 static void MX_GPTO_Init(void);
@@ -41,14 +43,6 @@ static void MX_USART2_UART_Init(void);
 
 USBD_HandleTypeDef USBD_Device;
 static UART_HandleTypeDef s_UARTHandle;
-
-#if ADC_ENABLE
-  /*for use ADC*/
-  //void ConfigureADC();
-  //ADC_HandleTypeDef g_AdcHandle;
-  uint32_t g_ADCValue=0;
-  int g_MeasurementNumber=0;
-#endif
 
 int main(void)
 {
@@ -88,10 +82,7 @@ int main(void)
 
   #if ADC_ENABLE
     /* Init ADC */
-    //ConfigureADC();
-    //HAL_ADC_Start(&g_AdcHandle);
     MX_ADC_Init();
-    //HAL_ADC_Start(&hadc);
   #endif
 
 /* Debug Range  */
@@ -105,13 +96,6 @@ int main(void)
     //required to wake-up the processor.
     __WFI();
 
-    #if 0 //need to remove from here and use interrupt mode
-    if (HAL_ADC_PollForConversion(&g_AdcHandle, 1000000) == HAL_OK)
-    {
-        g_ADCValue = HAL_ADC_GetValue(&g_AdcHandle);
-        g_MeasurementNumber++;
-    }
-    #endif
   }
 
 }
@@ -241,58 +225,3 @@ static void SystemClock_Config(void)
   /* Start automatic synchronization */
   HAL_RCCEx_CRSConfig (&RCC_CRSInitStruct);
 }
-
-#if ADC_ENABLE
-void ConfigureADC()
-{
-    /*
-    To start using the ADC:
-    - Enable the ADC clock
-    - Enable the GPIO clock for the pin you want to use
-    - Configure the GPIO pin as an analog input
-    - Configure the ADC speed (prescaler/sample time)
-    - Enable continuous measurement mode
-  */
-
-/*
-  __ADC1_CLK_ENABLE();
-
-   HAL_NVIC_SetPriority(ADC1_IRQn, 0, 0);
-   HAL_NVIC_EnableIRQ(ADC1_IRQn);
-
-    ADC_ChannelConfTypeDef adcChannel;
-
-    g_AdcHandle.Instance = ADC1;
-
-    g_AdcHandle.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV1;
-    g_AdcHandle.Init.Resolution = ADC_RESOLUTION_12B;
-    g_AdcHandle.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-    g_AdcHandle.Init.ScanConvMode = DISABLE;
-    //g_AdcHandle.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
-    g_AdcHandle.Init.EOCSelection = DISABLE;
-    //g_AdcHandle.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-    g_AdcHandle.Init.ContinuousConvMode = ENABLE;
-    //g_AdcHandle.Init.ContinuousConvMode = DISABLE;
-    g_AdcHandle.Init.DiscontinuousConvMode = DISABLE;
-    g_AdcHandle.Init.NbrOfDiscConversion = 0;
-    g_AdcHandle.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    g_AdcHandle.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-    //g_AdcHandle.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_CC1;
-    g_AdcHandle.Init.NbrOfConversion = 1;
-    g_AdcHandle.Init.DMAContinuousRequests = DISABLE;
-
-
-    HAL_ADC_Init(&g_AdcHandle);
-
-    adcChannel.Channel = ADC_CHANNEL_8;
-    adcChannel.Rank = 1;
-    adcChannel.SamplingTime = ADC_SAMPLETIME_480CYCLES;
-    adcChannel.Offset = 0;
-
-    if (HAL_ADC_ConfigChannel(&g_AdcHandle, &adcChannel) != HAL_OK)
-    {
-        asm("bkpt 255");
-    }
-    */
-}
-#endif
