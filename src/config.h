@@ -24,4 +24,7 @@ adjust these to suit the application
 #define CURRENT_ADC_FACTORE 0.01
 
 #define USART2_VCP_REPRINT_ENABLE 0
+
+# define SPI_ENABLE 1
+
 #endif /* __CONFIG_H */
