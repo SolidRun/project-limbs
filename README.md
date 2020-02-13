@@ -38,7 +38,7 @@ Then run the command bellow  :
 dfu-util  -l -d 0483:df11 -a 0 -s 0x08000000:leave -D ./build/stm32cdcuart.bin
 ```
 The USB device `idVendor=048 , idProduct=df11`
-#### Note: reconnect the mUSB when do you need to reflash the MCU again. 
+#### Note: reconnect the mUSB when you need to reflash the MCU. 
 
 ## DMA-accelerated multi-UART USB CDC for STM32F042 microcontroller
 
