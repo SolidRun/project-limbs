@@ -34,7 +34,7 @@ You can use `dfu-util` - Device firmware update (DFU) USB programmer to flash th
 [dfu tool descriptor]( http://manpages.ubuntu.com/manpages/xenial/man1/dfu-util.1.html)
 Then run the command bellow  : 
 ```
-# flashing the binares and boot the MCU 
+# flashing the binaries and boot the MCU 
 dfu-util  -l -d 0483:df11 -a 0 -s 0x08000000:leave -D ./build/stm32cdcuart.bin
 ```
 The USB device `idVendor=048 , idProduct=df11`
