@@ -19,7 +19,7 @@ HAL and LL APIs are available under open-source BSD license for user convenience
 
 ## Build Requirements
 - ARM GCC (arm-none-eabi-gcc-)
-- you can use STM32CubeIDE [stm tools](https://www.st.com/en/development-tools/stm32cubeide.html)
+- you can use the [STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html) stm tools
 
 ## Generate the code project :
 ```
