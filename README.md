@@ -31,7 +31,7 @@ The binaries output will be under ./src/build (stm32cdc.bin, .elf, .hex)
 ## Flashing the binares to your MCU : 
 Select usb boot mode (put the jumper on the MCU) and connect your PC to your board by plugging the micro USB cable to a USB port on your laptop/computer and plugging the other end to MicroUSB port on MCU (STM32).
 You can use `dfu-util` - Device firmware update (DFU) USB programmer to flash the FW to the MCU STM32, 
-[dfu tool discriptor]( http://manpages.ubuntu.com/manpages/xenial/man1/dfu-util.1.html)
+[dfu tool descriptor]( http://manpages.ubuntu.com/manpages/xenial/man1/dfu-util.1.html)
 Then run the command bellow  : 
 ```
 # flashing the binares and boot the MCU 
