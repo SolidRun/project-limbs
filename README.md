@@ -43,7 +43,7 @@ The USB device `idVendor=048 , idProduct=df11`
 ## DMA-accelerated multi-UART USB CDC for STM32F042 microcontroller
 
 - `config.h` has a `NUM_OF_CDC_UARTS` value that is used throughout the code to control the number of CDC UARTs.
-- The Command and Data Interface numbers in the USB descriptor in `usbd_desc.c` must be continguous and start from zero.
+- The **ommand and Data Interface** numbers in the USB descriptor in `usbd_desc.c` must be continguous and start from **zero**.
 - The `UARTconfig` array in `stm32f0xx_hal_msp.c` must be customized to suit the pin-mapping used in your application.
 - An understanding of USB descriptors is important when modifying `usb_desc.c`. This data conveys the configuration of the device (including endpoint, etc.) to the host PC.
 - The DMA IRQ handlers in `usbd_cdc.c` must be consistent with the `UARTconfig` array in `stm32f0xx_hal_msp.c`.
