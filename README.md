@@ -1,5 +1,5 @@
 
-# BMC - Board Managment controller based on MCU STM32F042
+# BMC - Board Management controller based on MCU STM32F042
 
 The STM32CubeF0 MCU Package composed of the STM32Cube hardware abstraction layer (HAL) and the low-layer (LL) APIs 
 was provided by [ST Micro](https://www.st.com/en/embedded-software/stm32cubef0.html).
@@ -26,7 +26,7 @@ HAL and LL APIs are available under open-source BSD license for user convenience
 cd ./src
 make clean && make 
 ``` 
-The binares output will be under ./src/build (stm32cdc.bin, .elf, .hex) 
+The binaries output will be under ./src/build (stm32cdc.bin, .elf, .hex) 
 
 ## Flashing the binares to your MCU : 
 Select usb boot mode (put the jumper on the MCU) and Connect your PC to your board by plugging the micro USB cable to a USB port on your laptop/computer and plugging the other end to MicroUSB port on MCU (STM32).
