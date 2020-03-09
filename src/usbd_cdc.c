@@ -32,6 +32,9 @@
 
 #include "adc.h"
 
+#include "spi.h"
+#include "w25qxx.h"
+
 /* USB handle declared in main.c */
 extern USBD_HandleTypeDef USBD_Device;
 
@@ -47,6 +50,7 @@ uint16_t writePointerTx=0, readPointerTx=0;
 uint8_t vcp_rx[BUF_SIZE];
 uint16_t countRx=0;
 uint16_t writePointerRx=0, readPointerRx=0;
+uint8_t res[7]="ls\n\r";
 
 /* ADC Help */
 #if ADC_ENABLE
@@ -55,6 +59,33 @@ uint16_t writePointerRx=0, readPointerRx=0;
   uint16_t adcvalue=0;
   #define ADC_VALUE_SIZE 7
   char adc_buff[ADC_VALUE_SIZE];
+#endif
+
+/* SPI Help */
+#if SPI_ENABLE
+
+
+  /**
+  * @brief  Compares two buffers.
+  * @param  pBuffer1, pBuffer2: buffers to be compared.
+  * @param  BufferLength: buffer's length
+  * @retval 0  : pBuffer1 identical to pBuffer2
+  *         >0 : pBuffer1 differs from pBuffer2
+  */
+static uint16_t Buffercmp(uint8_t* pBuffer1, uint8_t* pBuffer2, uint16_t BufferLength)
+{
+  while (BufferLength--)
+  {
+    if((*pBuffer1) != *pBuffer2)
+    {
+      return BufferLength;
+    }
+    pBuffer1++;
+    pBuffer2++;
+  }
+
+  return 0;
+}
 #endif
 
 /* local function prototyping */
@@ -434,6 +465,199 @@ void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
 
 #endif
 
+#if SPI_ENABLE
+  #define Spi_Flash_CS_Pin GPIO_PIN_4
+  #define SPI_TIMEOUT 10
+    /* SPI Chip Select */
+    static void SELECT(void)
+    {
+      HAL_GPIO_WritePin(GPIOA, Spi_Flash_CS_Pin, GPIO_PIN_RESET);
+    }
+
+    /* SPI Chip Deselect */
+    static void DESELECT(void)
+    {
+      HAL_GPIO_WritePin(GPIOA, Spi_Flash_CS_Pin, GPIO_PIN_SET);
+    }
+
+    /* SPI Tx*/
+    static void SPI_TxByte(uint8_t data)
+    {
+      while (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+      HAL_SPI_Transmit(&hspi1, &data, 1, SPI_TIMEOUT);
+    }
+
+    /* SPI Rx */
+    static uint8_t SPI_RxByte(void)
+    {
+      uint8_t dummy, data;
+      dummy = 0xFF;
+      data = 0;
+
+      while ((HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY));
+      HAL_SPI_TransmitReceive(&hspi1, &dummy, &data, 1, SPI_TIMEOUT);
+
+      return data;
+    }
+
+    /**
+      * @brief  Sends a byte through the SPI interface and return the byte received
+      *         from the SPI bus.
+      * @param  byte: byte to send.
+      * @retval The value of the received byte.
+      */
+    uint8_t sFLASH_SendByte(uint8_t byte)
+    {
+      /*!< Loop while DR register in not emplty */
+      //while (SPI_I2S_GetFlagStatus(sFLASH_SPI, SPI_I2S_FLAG_TXE) == RESET);
+      while (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+
+      /*!< Send byte through the SPI1 peripheral */
+      //SPI_I2S_SendData(sFLASH_SPI, byte);
+      HAL_SPI_Transmit(&hspi1, (uint8_t *) spiTxBuffer, 3, 1000);
+
+      /*!< Wait to receive a byte */
+      //while (SPI_I2S_GetFlagStatus(sFLASH_SPI, SPI_I2S_FLAG_RXNE) == RESET);
+      while (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+
+      /*!< Return the byte read from the SPI bus */
+      //return SPI_I2S_ReceiveData(sFLASH_SPI);
+      HAL_SPI_Receive(&hspi1, (uint8_t *) spiRxBuffer, 2, 1000);
+      return spiRxBuffer[0];
+    }
+
+  /**
+  * @brief  Reads FLASH identification.
+  * @retval FLASH identification
+  */
+  uint32_t sFLASH_ReadID(void)
+  {
+    uint32_t Temp = 0, Temp0 = 0, Temp1 = 0, Temp2 = 0;
+
+    /*!< Select the FLASH: Chip Select low */
+    SELECT();
+
+    /*!< Send "RDID " instruction */
+    sFLASH_SendByte(0x9F);
+    #define sFLASH_DUMMY_BYTE         0xA5
+    /*!< Read a byte from the FLASH */
+    Temp0 = sFLASH_SendByte(sFLASH_DUMMY_BYTE);
+
+    /*!< Read a byte from the FLASH */
+    Temp1 = sFLASH_SendByte(sFLASH_DUMMY_BYTE);
+
+    /*!< Read a byte from the FLASH */
+    Temp2 = sFLASH_SendByte(sFLASH_DUMMY_BYTE);
+
+    /*!< Deselect the FLASH: Chip Select high */
+    DESELECT();
+
+    Temp = (Temp0 << 16) | (Temp1 << 8) | Temp2;
+
+    return Temp;
+  }
+
+  void spi_test1(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
+  {
+    uint8_t dummy, data;
+    spiTxBuffer[0]=0x9F;
+    data = 0x9F;
+    SELECT();
+    USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+
+    //while (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+    //HAL_SPI_TransmitReceive(&hspi1, (uint8_t *) spiTxBuffer, (uint8_t *) spiRxBuffer, 3, 1000);
+    HAL_SPI_Transmit(&hspi1, &data, 1, SPI_TIMEOUT);
+    //DESELECT();
+    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+    HAL_SPI_Receive(&hspi1, (uint8_t *) spiRxBuffer, 1, 1000);
+    //DESELECT();
+    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)spiRxBuffer, 2);
+    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+  }
+
+uint8_t flage_ini_w25q=0;
+  void spi_test(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
+  {
+    //USBD_LL_Transmit(pdev,ep_addr,w25qxx.UniqID, 8);
+    //itoa(w25qxx.BlockCount,adc_buff,4);
+    //USBD_LL_Transmit(pdev,ep_addr, (uint8_t *)adc_buff, 4);
+
+    //SELECT();
+    /*
+    if( flage_ini_w25q==0 )
+    {
+      flage_ini_w25q=1;
+      W25qxx_Init();
+      USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+    }
+    */
+    //W25qxx_Init();
+    //W25qxx_ReadUniqID();
+    if (w25qxx.ID != W25Q32){
+      //USBD_LL_Transmit(pdev,ep_addr,& w25qxx.ID, 1);
+      //HAL_Delay(100);
+      //USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+      //HAL_Delay(100);
+      USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+    }
+    else
+    {
+      USBD_LL_Transmit(pdev,ep_addr, w25qxx.UniqID,8 );
+    }
+    //W25qxx_ReadUniqID();
+    HAL_Delay(1000);
+    USBD_LL_Transmit(pdev,ep_addr,w25qxx.UniqID, 8);
+    HAL_Delay(1000);
+    USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &w25qxx.JEDEC_ID, 4);
+    //HAL_Delay(100);
+    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+
+     //W25qxx_WriteByte(0x97, 0x0000000a);
+     //uint8_t pBuffer[2]="c\n";
+     //uint8_t pBuffer=0x63;
+     //W25qxx_ReadByte(&pBuffer ,0x0000000a);
+     //USBD_LL_Transmit(pdev,ep_addr,&pBuffer, 1);
+  }
+
+/*
+  void spi_test(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
+  {
+
+    static const uint8_t tx[4] = { 0x9F, 0x00, 0x00, 0x00 }; // Request JEDEC ID
+    uint8_t rx[4];
+    int i;
+    SELECT();
+    for(i=0; i<
+    sizeof
+    (tx); i++)
+    // SPI_HandleTypeDef *hspi, uint8_t *pTxData, uint8_t *pRxData, uint16_t Size, uint32_t Timeout)
+    HAL_SPI_TransmitReceive(tx,rx,4,10000);
+    DESELECT();
+
+
+    uint8_t dummy, data;
+    spiTxBuffer[0]=0x9F;
+    data = 0x9F;
+    SELECT();
+    USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+
+    //while (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+    //HAL_SPI_TransmitReceive(&hspi1, (uint8_t *) spiTxBuffer, (uint8_t *) spiRxBuffer, 3, 1000);
+    HAL_SPI_Transmit(&hspi1, &data, 1, SPI_TIMEOUT);
+    //DESELECT();
+    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+    HAL_SPI_Receive(&hspi1, (uint8_t *) spiRxBuffer, 1, 1000);
+    //DESELECT();
+    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)spiRxBuffer, 2);
+    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res, 5);
+  }
+*/
+
+#endif
+
 //static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length) // #VCP
 static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length) // #VCP
 {
@@ -449,6 +673,7 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         VOLTAGE,
         SPI_SW_STM,
         SPI_SW_COM,
+        SPI_TEST,
         CMD_NUM
   };
 
@@ -464,6 +689,7 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
      "voltage",
      "spi_sw_stm",
      "spi_sw_com",
+     "spi_test",
      "else"
    };
 
@@ -519,6 +745,9 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
       case SPI_SW_COM:
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_RESET);
         break;
+      case SPI_TEST:
+        spi_test(pdev,ep_addr);
+        break;
       case CMD_NUM:
         break;
       default:
@@ -532,7 +761,6 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
 
 const char hi[]="hi\n\r";
 const char TEST[]="ls\n\r";
-uint8_t res[7]="ls\n\r";
 uint8_t new_line[3]="\n\r";
 static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
@@ -561,7 +789,7 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
             USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)hcdc->OutboundBuffer, RxLength);
           #endif
 
-          #if 0
+          #if 1
           // reset cmd_id
           if ( (char) *outbuff == '1' )
           {
@@ -645,6 +873,73 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
             USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)str_adc_value, ADC_VALUE_SIZE+2);
           }
 
+          // SPI
+          if ( (char) *outbuff == '7' )
+          {
+            uint8_t dummy, data;
+            spiTxBuffer[0]=0x9F;
+            data = 0;
+            SELECT();
+            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)res, 5);
+            while (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)res, 5);
+            //HAL_SPI_TransmitReceive(&hspi1, (uint8_t *) spiTxBuffer, (uint8_t *) spiRxBuffer, 3, 1000);
+            HAL_SPI_Transmit(&hspi1, &data, 1, SPI_TIMEOUT);
+            DESELECT();
+            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)res, 5);
+            HAL_SPI_Receive(&hspi1, (uint8_t *) spiRxBuffer, 2, 1000);
+            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)spiRxBuffer, 2);
+            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)res, 5);
+          }
+          // SPI
+          if ( (char) *outbuff == '8' )
+          {
+
+              /* Start the Full Duplex Communication process ########################*/
+              /* While the SPI in TransmitReceive process, user can transmit data through
+                 "spiTxBuffer" buffer & receive data through "spiRxBuffer" */
+              if(HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t*)spiTxBuffer, (uint8_t *)spiRxBuffer, SPI_BUFFERSIZE) != HAL_OK)
+              {
+                /* Transfer error in transmission process */
+                Error_Handler_SPI();
+              }
+
+              /* Wait for the end of the transfer ###################################*/
+              /*  Before starting a new communication transfer, you must wait the callback call
+                  to get the transfer complete confirmation or an error detection.
+                  For simplicity reasons, this example is just waiting till the end of the
+                  transfer, but application may perform other tasks while transfer operation
+                  is ongoing. */
+              while (wTransferState == TRANSFER_WAIT)
+              {
+              }
+
+              switch(wTransferState)
+              {
+                case TRANSFER_COMPLETE :
+                  /* Compare the sent and received buffers ##############################*/
+                  if (Buffercmp((uint8_t*)spiTxBuffer, (uint8_t*)spiRxBuffer, SPI_BUFFERSIZE))
+                  {
+                    /* Processing Error */
+                    Error_Handler_SPI();
+                  }
+                break;
+                default :
+                  Error_Handler_SPI();
+                break;
+              }
+          }
+
+          // SPI
+          if ( (char) *outbuff == '9' )
+          {
+            SELECT();
+          }
+          // SPI
+          if ( (char) *outbuff == 'a' )
+          {
+            DESELECT();
+          }
           #endif
 
           if ( (char) *outbuff == '\n' || (char) *outbuff == ' ' ||(char) *outbuff == '-' || countRx >= BUF_SIZE-1 )
@@ -996,4 +1291,26 @@ void DMA1_Channel1_IRQHandler(void)
   HAL_DMA_IRQHandler(context[2].UartHandle.hdmarx);
 #endif
 }
+#endif
+
+#if SPI_ENABLE
+  /**
+    * @brief  This function handles DMA Rx interrupt request.
+    * @param  None
+    * @retval None
+    */
+  void SPIx_DMA_RX_IRQHandler(void)
+  {
+    HAL_DMA_IRQHandler(hspi1.hdmarx);
+  }
+
+  /**
+    * @brief  This function handles DMA Tx interrupt request.
+    * @param  None
+    * @retval None
+    */
+  void SPIx_DMA_TX_IRQHandler(void)
+  {
+    HAL_DMA_IRQHandler(hspi1.hdmatx);
+  }
 #endif

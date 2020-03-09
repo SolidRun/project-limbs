@@ -39,6 +39,7 @@
 
 #if SPI_ENABLE
   #include "spi.h"
+  #include "w25qxx.h"
 #endif
 
 static void SystemClock_Config(void);
@@ -84,15 +85,22 @@ int main(void)
   /* OK, only *now* it is OK for the USB interrupts to fire */
   __enable_irq();
 
+#if 1
   #if ADC_ENABLE
     /* Init ADC */
     MX_ADC_Init();
   #endif
 
   #if SPI_ENABLE
-    /* Init SPI */
+    /* Initialize the SPI low level */
     MX_SPI1_Init();
+    /* spi switch seclect stm32  */
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_SET);
+    W25qxx_Init();
+    /* spi switch deseclect stm32  */
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_RESET);
   #endif
+#endif
 
 
 /* Debug Range  */
@@ -154,13 +162,14 @@ static void MX_GPTO_Init(void)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /*Configure GPIO pins : PA4 PA5 PA6 PA7 */
+    /*
     GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
+    */
     /*Configure GPIO pins : PB2 PB3(VBAT_CONNECTED) PB4(MASTER_RESET)  PB5(PWR_BTN) */
     GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -168,8 +177,8 @@ static void MX_GPTO_Init(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    /*Configure GPIO pin : PA15 */
-    GPIO_InitStruct.Pin = GPIO_PIN_15;
+    /*Configure GPIO pin : PA4 PA15 */
+    GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_15;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
