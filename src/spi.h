@@ -45,10 +45,28 @@
 
 extern SPI_HandleTypeDef hspi1;
 
-extern void Error_Handler(void);
+extern void Error_Handler_SPI(void);
 
 void MX_SPI1_Init(void);
-void Error_Handler_SPI(void);
+
+//===========================================================
+// SPI transfer Status
+enum {
+	TRANSFER_WAIT,
+	TRANSFER_COMPLETE,
+	TRANSFER_ERROR
+};
+/* transfer state */
+extern __IO uint32_t wTransferState;
+
+#define SPI_BUFFERSIZE 8
+/* Buffer used for transmission */
+extern uint8_t spiTxBuffer[];
+/* Buffer used for reception */
+extern uint8_t spiRxBuffer[SPI_BUFFERSIZE];
+
+//===========================================================
+
 #ifdef __cplusplus
 }
 #endif

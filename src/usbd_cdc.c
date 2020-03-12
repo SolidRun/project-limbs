@@ -31,6 +31,7 @@
 #include <math.h>
 
 #include "adc.h"
+#include "w25qxx.h"
 
 /* USB handle declared in main.c */
 extern USBD_HandleTypeDef USBD_Device;

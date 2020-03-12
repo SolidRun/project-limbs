@@ -39,6 +39,7 @@
 
 #if SPI_ENABLE
   #include "spi.h"
+  #include "w25qxx.h"
 #endif
 
 static void SystemClock_Config(void);
