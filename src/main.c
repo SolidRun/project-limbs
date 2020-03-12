@@ -37,6 +37,10 @@
   #include "adc.h"
 #endif
 
+#if SPI_ENABLE
+  #include "spi.h"
+#endif
+
 static void SystemClock_Config(void);
 static void MX_GPTO_Init(void);
 static void MX_USART2_UART_Init(void);
@@ -83,6 +87,11 @@ int main(void)
   #if ADC_ENABLE
     /* Init ADC */
     MX_ADC_Init();
+  #endif
+
+  #if SPI_ENABLE
+    /* Init SPI */
+    MX_SPI1_Init();
   #endif
 
 /* Debug Range  */

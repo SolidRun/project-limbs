@@ -56,7 +56,8 @@ SRCS += \
 	./adc.c \
 	./stm32f0xx_hal_spi_ex.c \
 	./stm32f0xx_hal_spi.c \
-	./stm32f0xx_ll_spi.c
+	./stm32f0xx_ll_spi.c \
+	./spi.c
 
 DEFINES += \
   -DSTM32F042x6
