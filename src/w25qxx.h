@@ -13,9 +13,6 @@
 #define _W25QXX_CS_PIN                GPIO_PIN_4
 #define _W25QXX_USE_FREERTOS          0
 #define _W25QXX_DEBUG                 0
-
-#define W25QXX_DUMMY_BYTE         0xA5
-#define Spi_Flash_CS_Pin GPIO_PIN_4
 #define SPI_TIMEOUT 1000
 
 /* M25P SPI Flash supported commands */
@@ -23,9 +20,10 @@
 #define SPINOR_OP_WRDI		0x04	/* Write disable */
 #define SPINOR_OP_RDSR		0x05	/* Read status register (S7-S0)*/
 #define SPINOR_OP_RDCR		0x35	/* Read configuration register (S15-S8)*/
-#define SPINOR_OP_RDID		0x9f	/* Read JEDEC ID ***/
+#define SPINOR_OP_RDID		0x9F	/* Read JEDEC ID ***/
+#define SPINOR_OP_RDUID		0x4B	/* Read Read Uniq ID ***/
 #define SPINOR_OP_READ		0x03	/* Read data bytes (low frequency) */
-#define SPINOR_OP_READ_FAST	0x0b	/* Read data bytes (high frequency) */
+#define SPINOR_OP_READ_FAST	0x0B	/* Read data bytes (high frequency) */
 #define SPINOR_OP_BE_32K	0x52	/* Erase 32KiB block */
 
 //========//
@@ -41,7 +39,7 @@
 
 #define sFLASH_WIP_FLAG           0x01  /* Write In Progress (WIP) flag */
 
-#define sFLASH_DUMMY_BYTE         0xA5
+#define W25QXX_DUMMY_BYTE         0xA5
 #define sFLASH_SPI_PAGESIZE       0x100
 
 // { "w25q32", INFO(0xef4016, 0, 64 * 1024,  64, SECT_4K) },

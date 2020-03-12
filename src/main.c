@@ -93,6 +93,10 @@ int main(void)
   #if SPI_ENABLE
     /* Init SPI */
     MX_SPI1_Init();
+    /* spi switch seclect stm32  */
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_SET);
+    /* Init spi flash  */
+    W25qxx_Init();
   #endif
 
 /* Debug Range  */

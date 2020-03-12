@@ -14,6 +14,7 @@ adjust these to suit the application
   ADC_RESOLUTION = 0.0008056640625
 */
 #define VOLTAGE_ADC_FACTORE 0.00645
+//#define VOLTAGE_ADC_FACTORE 0.00674
 /* calculate current ADC factore
   TO DO
   .
@@ -26,5 +27,7 @@ adjust these to suit the application
 #define USART2_VCP_REPRINT_ENABLE 0
 
 # define SPI_ENABLE 1
+# define MASTER_SPI 1
+# define SPI_IT_MODE 0
 
 #endif /* __CONFIG_H */
