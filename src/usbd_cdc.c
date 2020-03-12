@@ -366,12 +366,14 @@ uint16_t ADC_Read(void)
     and can read the adc value adcVal = HAL_ADC_GetValue(&hadc);
     start convertion use Interrupts Mode
   */
-  HAL_ADC_Start_IT(&hadc);
+  HAL_ADC_Start_IT(&hadc);// Start ADC1 under Interrupt
   // Callback Fun when ADC conversion completed
   void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
   {
     adcvalue = HAL_ADC_GetValue(&hadc);
-    HAL_ADC_Start_IT(&hadc);
+    HAL_ADC_Start_IT(&hadc); // Re-Start ADC1 under Interrupt
+                            // this is necessary because we don'use
+                            // the Continuos Conversion Mode
   }
 #endif
 

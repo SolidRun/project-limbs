@@ -73,9 +73,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   if(adcHandle->Instance==ADC1)
   {
-  /* USER CODE BEGIN ADC1_MspInit 0 */
 
-  /* USER CODE END ADC1_MspInit 0 */
     /* ADC1 clock enable */
     //__HAL_RCC_ADC1_CLK_ENABLE();
     __ADC1_CLK_ENABLE();
@@ -90,6 +88,11 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    #if ADC_IT_MODE
+      /* Peripheral interrupt init */
+      HAL_NVIC_SetPriority(ADC1_IRQn, 0, 0);
+      HAL_NVIC_EnableIRQ(ADC1_IRQn);
+    #endif
 
   }
 }
@@ -99,9 +102,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
   if(adcHandle->Instance==ADC1)
   {
-  /* USER CODE BEGIN ADC1_MspDeInit 0 */
 
-  /* USER CODE END ADC1_MspDeInit 0 */
     /* Peripheral clock disable */
     //__HAL_RCC_ADC1_CLK_DISABLE();
     __ADC1_CLK_DISABLE();
@@ -112,9 +113,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0|GPIO_PIN_1);
 
-  /* USER CODE BEGIN ADC1_MspDeInit 1 */
-
-  /* USER CODE END ADC1_MspDeInit 1 */
+    /* Peripheral interrupt Deinit*/
+    HAL_NVIC_DisableIRQ(ADC1_IRQn);
   }
 }
 
