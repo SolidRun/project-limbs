@@ -140,7 +140,7 @@ bool	W25qxx_Init(void)
   W25qxx_Delay(100);
 	volatile uint32_t	id;
 	id=W25qxx_ReadID();
-	w25qxx.JEDEC_ID=id;
+	//w25qxx.JEDEC_ID=id;
 	switch(id&0x0000FFFF)
 	{
 		case 0x401A:	// 	w25q512

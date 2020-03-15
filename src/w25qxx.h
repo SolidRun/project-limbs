@@ -63,7 +63,7 @@ typedef enum
 typedef struct
 {
 	W25QXX_ID_t	ID;
-  volatile uint32_t	JEDEC_ID;
+  //uint32_t	JEDEC_ID;
 	uint8_t		UniqID[8];
 	uint16_t	PageSize;
 	uint32_t	PageCount;
