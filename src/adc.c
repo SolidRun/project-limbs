@@ -113,8 +113,10 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0|GPIO_PIN_1);
 
-    /* Peripheral interrupt Deinit*/
-    HAL_NVIC_DisableIRQ(ADC1_IRQn);
+    #if ADC_IT_MODE
+      /* Peripheral interrupt Deinit*/
+      HAL_NVIC_DisableIRQ(ADC1_IRQn);
+    #endif
   }
 }
 

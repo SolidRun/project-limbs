@@ -28,5 +28,6 @@ adjust these to suit the application
 
 # define SPI_ENABLE 1
 # define MASTER_SPI 1
+# define SPI_IT_MODE 0
 
 #endif /* __CONFIG_H */

@@ -37,32 +37,17 @@
 
 SPI_HandleTypeDef hspi1;
 
-// =============================remove to cdc_usbd.c===========================
-
-/* Buffer used for transmission */
-uint8_t spiTxBuffer[] = "****SPI - Two Boards communication based on DMA **** SPI Message ******** SPI Message ******** SPI Message ****";
-/* Buffer used for reception */
-uint8_t spiRxBuffer[SPI_BUFFERSIZE];
-//spiRxBuffer[0]='a';
-//spiRxBuffer[1]='\0';
-/* transfer state */
-__IO uint32_t wTransferState = TRANSFER_WAIT;
-//uint8_t wTransferState=0;
-
-// ===========================================================================
-
 /* SPI1 init function */
 void MX_SPI1_Init(void)
 {
 
   /* Set the SPI parameters */
   hspi1.Instance = SPI1;
-  #ifdef MASTER_SPI
+  #if MASTER_SPI
     hspi1.Init.Mode = SPI_MODE_MASTER;
   #else
     hspi1.Init.Mode = SPI_MODE_SLAVE;
   #endif /* MASTER_BOARD */
-  //hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
@@ -95,6 +80,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
     __SPI1_CLK_ENABLE();
 
     /**SPI1 GPIO Configuration
+    PA4     ------> SPI1_CS
     PA5     ------> SPI1_SCK
     PA6     ------> SPI1_MISO
     PA7     ------> SPI1_MOSI
@@ -112,10 +98,12 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
 
     /* SPI1_CS init High (DESELECT) */
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-    /* Peripheral interrupt init */
-    //HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
-    //HAL_NVIC_EnableIRQ(SPI1_IRQn);
 
+    #if SPI_IT_MODE
+      /* Peripheral interrupt init */
+      HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
+      HAL_NVIC_EnableIRQ(SPI1_IRQn);
+    #endif
   }
 }
 
@@ -136,40 +124,42 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
     */
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7);
 
-    /* Peripheral interrupt Deinit*/
-    //HAL_NVIC_DisableIRQ(SPI1_IRQn);
-
+    #if SPI_IT_MODE
+      /* Peripheral interrupt Deinit*/
+      HAL_NVIC_DisableIRQ(SPI1_IRQn);
+    #endif
   }
 
 }
 
-/**
-  * @brief  TxRx Transfer completed callback.
-  * @param  hspi: SPI handle
-  * @note   This example shows a simple way to report end of DMA TxRx transfer, and
-  *         you can add your own implementation.
-  * @retval None
-  */
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-  /* Turn LED2 on: Transfer in transmission/reception process is complete */
-  wTransferState = TRANSFER_COMPLETE;
-}
+#if SPI_IT_MODE
+  /**
+    * @brief  TxRx Transfer completed callback.
+    * @param  hspi: SPI handle
+    * @note   This example shows a simple way to report end of DMA TxRx transfer, and
+    *         you can add your own implementation.
+    * @retval None
+    */
+  void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+  {
+    /* Turn LED2 on: Transfer in transmission/reception process is complete */
+    wTransferState = TRANSFER_COMPLETE;
+  }
 
-/**
-  * @brief This function handles SPI1 global interrupt.
-  */
-void SPI1_IRQHandler(void)
-{
-  /* USER CODE BEGIN SPI1_IRQn 0 */
+  /**
+    * @brief This function handles SPI1 global interrupt.
+    */
+  void SPI1_IRQHandler(void)
+  {
+    /* USER CODE BEGIN SPI1_IRQn 0 */
 
-  /* USER CODE END SPI1_IRQn 0 */
-  HAL_SPI_IRQHandler(&hspi1);
-  /* USER CODE BEGIN SPI1_IRQn 1 */
+    /* USER CODE END SPI1_IRQn 0 */
+    HAL_SPI_IRQHandler(&hspi1);
+    /* USER CODE BEGIN SPI1_IRQn 1 */
 
-  /* USER CODE END SPI1_IRQn 1 */
-}
-
+    /* USER CODE END SPI1_IRQn 1 */
+  }
+#endif
 
 /**
   * @brief  This function is executed in case of error occurrence.

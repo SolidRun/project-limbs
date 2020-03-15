@@ -98,7 +98,11 @@ int main(void)
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_SET);
     W25qxx_Init();
     /* spi switch deseclect stm32  */
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_RESET);
+    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_RESET);
+
+    //W25qxx_WriteByte(0x97, 0x0000a00a);
+    //uint8_t pBuffer[2]="c\n";
+    //uint8_t pBuffer=0x63;
   #endif
 #endif
 

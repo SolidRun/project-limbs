@@ -42,7 +42,7 @@
 #include "stm32f0xx_hal.h"
 #include "stm32f042x6.h"
 #include "stm32f0xx_hal_spi.h"
-
+#include "config.h"
 
 extern SPI_HandleTypeDef hspi1;
 
@@ -62,7 +62,7 @@ extern __IO uint32_t wTransferState;
 
 #define SPI_BUFFERSIZE 8
 /* Buffer used for transmission */
-extern uint8_t spiTxBuffer[];
+extern uint8_t spiTxBuffer[SPI_BUFFERSIZE];
 /* Buffer used for reception */
 extern uint8_t spiRxBuffer[SPI_BUFFERSIZE];
 

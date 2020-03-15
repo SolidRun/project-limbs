@@ -13,15 +13,17 @@
 #define _W25QXX_CS_PIN                GPIO_PIN_4
 #define _W25QXX_USE_FREERTOS          0
 #define _W25QXX_DEBUG                 0
+#define SPI_TIMEOUT 1000
 
 /* M25P SPI Flash supported commands */
 #define SPINOR_OP_WREN		0x06	/* Write enable */
 #define SPINOR_OP_WRDI		0x04	/* Write disable */
 #define SPINOR_OP_RDSR		0x05	/* Read status register (S7-S0)*/
 #define SPINOR_OP_RDCR		0x35	/* Read configuration register (S15-S8)*/
-#define SPINOR_OP_RDID		0x9f	/* Read JEDEC ID ***/
+#define SPINOR_OP_RDID		0x9F	/* Read JEDEC ID ***/
+#define SPINOR_OP_RDUID		0x4B	/* Read Read Uniq ID ***/
 #define SPINOR_OP_READ		0x03	/* Read data bytes (low frequency) */
-#define SPINOR_OP_READ_FAST	0x0b	/* Read data bytes (high frequency) */
+#define SPINOR_OP_READ_FAST	0x0B	/* Read data bytes (high frequency) */
 #define SPINOR_OP_BE_32K	0x52	/* Erase 32KiB block */
 
 //========//
@@ -37,7 +39,7 @@
 
 #define sFLASH_WIP_FLAG           0x01  /* Write In Progress (WIP) flag */
 
-#define sFLASH_DUMMY_BYTE         0xA5
+#define W25QXX_DUMMY_BYTE         0xA5
 #define sFLASH_SPI_PAGESIZE       0x100
 
 // { "w25q32", INFO(0xef4016, 0, 64 * 1024,  64, SECT_4K) },
@@ -61,7 +63,7 @@ typedef enum
 typedef struct
 {
 	W25QXX_ID_t	ID;
-  uint32_t	JEDEC_ID;
+  //uint32_t	JEDEC_ID;
 	uint8_t		UniqID[8];
 	uint16_t	PageSize;
 	uint32_t	PageCount;
@@ -83,10 +85,13 @@ extern w25qxx_t	w25qxx;
 //############################################################################
 bool		W25qxx_Init(void);
 
+void    SELECT(void);
+void    DESELECT(void);
 void		W25qxx_EraseChip(void);
 void 		W25qxx_EraseSector(uint32_t SectorAddr);
 void 		W25qxx_EraseBlock(uint32_t BlockAddr);
 void    W25qxx_ReadUniqID(void);
+uint32_t  W25qxx_ReadID(void);
 
 uint32_t	W25qxx_PageToSector(uint32_t	PageAddress);
 uint32_t	W25qxx_PageToBlock(uint32_t	PageAddress);
