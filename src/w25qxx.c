@@ -21,6 +21,7 @@ void DESELECT(void)
 	HAL_GPIO_WritePin(_W25QXX_CS_GPIO, _W25QXX_CS_PIN, GPIO_PIN_SET);
 }
 
+/* SPI Transmit & Receive Byte */
 uint8_t	W25qxx_Spi(uint8_t	Data)
 {
 	uint8_t	ret;
@@ -29,6 +30,7 @@ uint8_t	W25qxx_Spi(uint8_t	Data)
 	return ret;
 }
 
+/* Read The w25qxx ID */
 uint32_t W25qxx_ReadID(void)
 {
   uint32_t Temp = 0, Temp0 = 0, Temp1 = 0, Temp2 = 0;
@@ -42,6 +44,7 @@ uint32_t W25qxx_ReadID(void)
   return Temp;
 }
 
+/* Read The w25qxx Uniq ID */
 void W25qxx_ReadUniqID(void)
 {
   SELECT();
@@ -53,6 +56,7 @@ void W25qxx_ReadUniqID(void)
   DESELECT();
 }
 
+/* Write Enable */
 void W25qxx_WriteEnable(void)
 {
   SELECT();
@@ -61,6 +65,7 @@ void W25qxx_WriteEnable(void)
 	W25qxx_Delay(1);
 }
 
+/* Write Disable */
 void W25qxx_WriteDisable(void)
 {
   SELECT();
@@ -69,6 +74,7 @@ void W25qxx_WriteDisable(void)
 	W25qxx_Delay(1);
 }
 
+/* Read status register (S7-S0) or (S15-S8) */
 uint8_t W25qxx_ReadStatusRegister(uint8_t	SelectStatusRegister_1_2_3)
 {
 	uint8_t	status=0;

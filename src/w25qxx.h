@@ -21,7 +21,7 @@
 #define SPINOR_OP_RDSR		0x05	/* Read status register (S7-S0)*/
 #define SPINOR_OP_RDCR		0x35	/* Read configuration register (S15-S8)*/
 #define SPINOR_OP_RDID		0x9F	/* Read JEDEC ID ***/
-#define SPINOR_OP_RDUID		0x4B	/* Read Read Uniq ID ***/
+#define SPINOR_OP_RDUID		0x4B	/* Read Uniq ID ***/
 #define SPINOR_OP_READ		0x03	/* Read data bytes (low frequency) */
 #define SPINOR_OP_READ_FAST	0x0B	/* Read data bytes (high frequency) */
 #define SPINOR_OP_BE_32K	0x52	/* Erase 32KiB block */

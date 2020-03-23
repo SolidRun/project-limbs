@@ -41,7 +41,7 @@ extern USBD_HandleTypeDef USBD_Device;
 /* CDC buffers declaration for VCP */
 static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length);
 //static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length);
-#define BUF_SIZE 11
+#define BUF_SIZE 16
 // TX
 uint8_t vcp_tx[BUF_SIZE];
 uint16_t countTx=0;
@@ -480,12 +480,18 @@ void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
   }
 
   volatile uint32_t jedec_id=0;
-  /* show the W25qxx spi flash JEDEC ID (0x40ef16 -> W25Q32) */
+  /* show the W25qxx-spi-flash JEDEC ID (0x40ef16 -> W25Q32) */
   void spi_flash_id(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
   {
     jedec_id=W25qxx_ReadID();
     reverse((char*) &jedec_id,0,3);
     USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &jedec_id, 4);
+  }
+
+  /* show the W25qxx UniqID */
+  void spi_flash_uniq_id(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
+  {
+    USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &w25qxx.UniqID, 8);
   }
 
   void spi_test(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
@@ -600,6 +606,7 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         SPI_SW_COM,
         SPI_TEST,
         SPI_ID,
+        SPI_UNIQ_ID,
         CMD_NUM
   };
 
@@ -617,6 +624,7 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
      "spi_sw_com",
      "spi_test",
      "spi_id",
+     "spi_uniq_id",
      "else"
    };
 
@@ -688,6 +696,9 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         break;
       case SPI_ID:
         spi_flash_id(pdev,ep_addr);
+        break;
+      case SPI_UNIQ_ID:
+        spi_flash_uniq_id(pdev,ep_addr);
         break;
       case CMD_NUM:
         break;
