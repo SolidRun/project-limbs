@@ -31,6 +31,7 @@
 #include <math.h>
 
 #include "adc.h"
+#include <math.h>
 
 #include "spi.h"
 #include "w25qxx.h"
@@ -41,7 +42,7 @@ extern USBD_HandleTypeDef USBD_Device;
 /* CDC buffers declaration for VCP */
 static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length);
 //static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length);
-#define BUF_SIZE 20
+#define BUF_SIZE 11
 // TX
 uint8_t vcp_tx[BUF_SIZE];
 uint16_t countTx=0;
@@ -404,7 +405,8 @@ int my_strcmp(char *strg1, char *strg2)
 #endif
 
 // help functions - Convert string number to integer
-uint8_t StringToInt(char a[]) {
+uint8_t StringToInt(char a[])
+{
   uint8_t c, n;
   n = 0;
   for (c = 0; a[c] != '\0'; c++) {
@@ -423,18 +425,18 @@ void Current_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
       Error_Handler_ADC();
     }
     /* read adc value */
-    adcvalue=ADC_Read();
-    double adc_current=(double)adcvalue * CURRENT_ADC_FACTORE;
+    adcvalue = ADC_Read();
+    double adc_current = (double)adcvalue * CURRENT_ADC_FACTORE;
     /* convert double to Str */
     itoa(adc_current,adc_buff,10);
-    const char * point=".";
+    const char * point = ".";
     char lower_buff[4];
-    uint16_t lower_adc_current=(adc_current-(double)StringToInt(adc_buff))*1000;
+    uint16_t lower_adc_current = (adc_current-(double)StringToInt(adc_buff)) * 1000;
     itoa(lower_adc_current,lower_buff,10);
     /* show result value */
-    const char * A_new_line="A\r\n";
-    char * str_adc_current=strcat(strcat(adc_buff,point) ,strcat(lower_buff, A_new_line));
-    USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)str_adc_current, ADC_VALUE_SIZE+2);
+    const char * A_new_line = "A\r\n";
+    char * str_adc_current = strcat(strcat(adc_buff,point) ,strcat(lower_buff, A_new_line));
+    USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)str_adc_current, strlen(str_adc_current));
 }
 
 void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
@@ -445,19 +447,18 @@ void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
     if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
       Error_Handler_ADC();
     /* read adc value */
-    adcvalue=ADC_Read();
-    double adc_voltage=(double)adcvalue * VOLTAGE_ADC_FACTORE;
+    adcvalue = ADC_Read();
+    double adc_voltage = (double)adcvalue * VOLTAGE_ADC_FACTORE;
     /* convert double to Str */
-    //char upper_buff[ADC_VALUE_SIZE];
     itoa(adc_voltage,adc_buff,10);
-    const char * point=".";
+    const char * point = ".";
     char lower_buff[4];
-    uint16_t lower_adc_voltage=(adc_voltage-(double)StringToInt(adc_buff))*1000;
+    uint16_t lower_adc_voltage = (adc_voltage-(double)StringToInt(adc_buff)) * 1000;
     itoa(lower_adc_voltage,lower_buff,10);
     /* show result value */
-    const char * v_new_line="v\r\n";
-    char * str_adc_voltage=strcat(strcat(adc_buff,point) ,strcat(lower_buff, v_new_line));
-    USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)str_adc_voltage, ADC_VALUE_SIZE+2);
+    const char * v_new_line = "v\r\n";
+    char * str_adc_voltage = strcat(strcat(adc_buff,point) ,strcat(lower_buff, v_new_line));
+    USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)str_adc_voltage,strlen(str_adc_voltage) );
 }
 
 #endif
