@@ -41,8 +41,7 @@ extern USBD_HandleTypeDef USBD_Device;
 
 /* CDC buffers declaration for VCP */
 static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length);
-//static uint8_t vcp_cmd_control( uint8_t* pbuf, uint16_t length);
-#define BUF_SIZE 11
+#define BUF_SIZE 15
 // TX
 uint8_t vcp_tx[BUF_SIZE];
 uint16_t countTx=0;
@@ -507,9 +506,9 @@ void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
     reverse((char*) &jedec_id,0,3);
     USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &jedec_id, 4);
 
-    W25qxx_WriteByte(0x97, 0x0000100a);
+    W25qxx_WriteByte(0x97, 0x00ff100a);
     uint8_t pBuffer=0x63;
-    W25qxx_ReadByte(&pBuffer ,0x0000100a);
+    W25qxx_ReadByte(&pBuffer ,0x00ff100a);
     HAL_Delay(100);
     USBD_LL_Transmit(pdev,ep_addr,&pBuffer, 1);
 
@@ -525,7 +524,8 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         RESET,
         POWERON,
         POWEROFF,
-        POWERBTN,
+        POWERBTN_LOW,
+        POWERBTN_HIGH,
         VBATON,
         VBATOFF,
         CURRENT,
@@ -543,7 +543,8 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
      "reset",
      "poweron",
      "poweroff",
-     "powerbtn",
+     "powerbtn_low",
+     "powerbtn_high",
      "vbaton",
      "vbatoff",
      "current",
@@ -587,9 +588,13 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         HAL_Delay(10000);
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
         break;
-      case POWERBTN:
-        /* Press/unpress POWER-OFF Button */
-        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
+      case POWERBTN_LOW:
+        /* Press POWER Button */
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
+        break;
+      case POWERBTN_HIGH:
+        /* Unpress POWER Button */
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
         break;
       case VBATON:
         /* Enable the RTC Battery Voltage */
@@ -764,7 +769,7 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
           #endif
 
           // input managment
-          if ( (char) *outbuff == '\n' || (char) *outbuff == ' ' ||(char) *outbuff == '-' || countRx >= BUF_SIZE-1 )
+          if ( (char) *outbuff == '\n' ||(char) *outbuff == '-' || countRx >= BUF_SIZE-1 )
           {
             vcp_rx[writePointerRx]=(uint8_t)'\0';
             vcp_cmd_control(pdev,parameters[index].data_in_ep,vcp_rx,countRx);
