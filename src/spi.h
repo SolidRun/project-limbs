@@ -43,6 +43,7 @@
 #include "stm32f042x6.h"
 #include "stm32f0xx_hal_spi.h"
 #include "config.h"
+#include "usbd_cdc.h"
 
 extern SPI_HandleTypeDef hspi1;
 

@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include "spi.h"
+#include "usbd_cdc.h"
 
 #define _W25QXX_SPI                   hspi1
 #define _W25QXX_CS_GPIO               GPIOA

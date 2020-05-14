@@ -41,6 +41,7 @@ extern USBD_HandleTypeDef USBD_Device;
 
 /* CDC buffers declaration for VCP */
 static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length);
+void debug_message(char * message, uint8_t message_size );
 #define BUF_SIZE 15
 // TX
 uint8_t vcp_tx[BUF_SIZE];
@@ -369,6 +370,14 @@ int my_strcmp(char *strg1, char *strg2)
     }
 }
 
+void debug_message(char * message, uint8_t message_size )
+{
+  USBD_HandleTypeDef *pdev = &USBD_Device;
+  uint8_t usart2_data_in_ep = 0x83;//0x81
+  //uint8_t message_size = sizeof(message)/sizeof(char);
+  USBD_LL_Transmit(pdev,usart2_data_in_ep,(uint8_t *)message, message_size);
+}
+
 #if ADC_ENABLE
 
   uint16_t ADC_Read(void)
@@ -499,9 +508,9 @@ void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
   {
     if (w25qxx.ID == W25Q32){
       USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res,4);
+      HAL_Delay(100);
     }
 
-    HAL_Delay(100);
     jedec_id=W25qxx_ReadID();
     reverse((char*) &jedec_id,0,3);
     USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &jedec_id, 4);
@@ -511,6 +520,7 @@ void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
     W25qxx_ReadByte(&pBuffer ,0x00ff100a);
     HAL_Delay(100);
     USBD_LL_Transmit(pdev,ep_addr,&pBuffer, 1);
+    HAL_Delay(100);
 
   }
 
@@ -764,6 +774,12 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
               jedec_id=W25qxx_ReadID();
               reverse((char*) &jedec_id,0,3);
               USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t*) &jedec_id, 4);
+            }
+
+            if ( (char) *outbuff == '8' )
+            {
+              char * str="Welcome-Project-Limps !\r\n";
+              debug_message(str,25);
             }
 
           #endif

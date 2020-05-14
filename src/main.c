@@ -28,6 +28,7 @@
 #include "stm32f0xx_hal_adc.h"
 #include "stm32f0xx_hal.h"
 #include "stm32f042x6.h"
+#include "usbd_cdc.h"
 
 /* for use Transmit uart2 */
 #include "usbd_cdc.h"

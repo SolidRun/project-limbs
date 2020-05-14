@@ -97,4 +97,6 @@ typedef struct _USBD_CDC_Itf
 
 extern const USBD_CompClassTypeDef USBD_CDC;
 
+void debug_message(char * message, uint8_t message_size );
+
 #endif  // __USB_CDC_H_
