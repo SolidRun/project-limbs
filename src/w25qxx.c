@@ -3,11 +3,7 @@
 
 w25qxx_t	w25qxx;
 
-#if (_W25QXX_USE_FREERTOS==1)
-#define	W25qxx_Delay(delay)		osDelay(delay)
-#else
 #define	W25qxx_Delay(delay)		HAL_Delay(delay)
-#endif
 
 /* SPI Chip Select */
 void SELECT(void)
@@ -23,9 +19,16 @@ void DESELECT(void)
 
 uint8_t	W25qxx_Spi(uint8_t	Data)
 {
-	uint8_t	ret;
-	while ((HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY));
-	HAL_SPI_TransmitReceive(&_W25QXX_SPI,&Data,&ret,1,SPI_TIMEOUT);
+	uint8_t	ret=0x63; // defualt value for debug
+	uint8_t	counter=25; // time out
+	while ((HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY)){
+		counter=counter-1;
+		HAL_Delay(1);
+		if(counter <= 0)
+			break;
+	}
+	if(counter > 0)
+		HAL_SPI_TransmitReceive(&_W25QXX_SPI,&Data,&ret,1,SPI_TIMEOUT);
 	return ret;
 }
 
@@ -159,7 +162,7 @@ bool	W25qxx_Init(void)
 			w25qxx.ID=W25Q64;
 			w25qxx.BlockCount=128;
 		break;
-		case 0x4016:	//	w25q32
+		case 0x4016:	//	w25q32 **
 			w25qxx.ID=W25Q32;
 			w25qxx.BlockCount=64;
 		break;
@@ -457,7 +460,7 @@ bool 	W25qxx_IsEmptyBlock(uint32_t Block_Address,uint32_t OffsetInByte,uint32_t 
 
 void W25qxx_WriteByte(uint8_t pBuffer, uint32_t WriteAddr_inBytes)
 {
-	while(w25qxx.Lock==1)
+	while(w25qxx.Lock==1)//#??
 		W25qxx_Delay(1);
 	w25qxx.Lock=1;
 	W25qxx_WaitForWriteEnd();
