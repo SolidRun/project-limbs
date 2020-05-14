@@ -94,7 +94,8 @@ def poweroff(device,resultFile):
     send_cmd("powerbtn_high",device)
     print("Power Off")
 
-def execute_cmd(cmd,device):
+def execute_cmd(cmd,device,cmd_dict):
+    '''
     cmd_dict =	{
       "reset":"",
       "poweron": "",
@@ -112,6 +113,7 @@ def execute_cmd(cmd,device):
       "spi_uniq_id":"bin",
       "Nan": ""
     }
+    '''
     # Validate command format
     if not cmd in cmd_dict:
         print("%s - Command not found "% (cmd))
@@ -149,7 +151,7 @@ def execute_cmd(cmd,device):
             time.sleep(0.8)
             res=read_result(resultFile)
             if res != None :
-                print("result:\n {}".format(res))
+                print("result: {}".format(res))
             else:
                 print("Error result")
         else:
@@ -173,6 +175,26 @@ local_log=logging.getLogger("STM32-VCP-Command_Control")
 #   Main
 # # # # # # # #
 def main(log_name='stm32_vcp'):
+    cmd_dict =	{
+      "reset":"",
+      "poweron": "",
+      "poweroff": "",
+      "powerbtn_low":"",
+      "powerbtn_high":"",
+      "vbaton":"",
+      "vbatoff":"",
+      "current":"str",
+      "voltage":"str",
+      "spi_sw_stm":"",
+      "spi_sw_com":"",
+      "spi_test":"bin",
+      "spi_id":"bin",
+      "spi_uniq_id":"bin",
+      "Nan": ""
+    }
+    commands_available='| '.join(map(str, cmd_dict.keys()))
+    commands_available="Command Operation: "+commands_available
+
     # Parsing input parameters
     parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
     parser.add_argument('-d',
@@ -184,7 +206,7 @@ def main(log_name='stm32_vcp'):
     parser.add_argument('-c',
                         '--cmd',
                         type=str,
-                        help="Command Operation")
+                        help=str(commands_available))
 
     parser.add_argument('-w',
                         '--write_address',
@@ -216,7 +238,7 @@ def main(log_name='stm32_vcp'):
         read_address = hex(read_address)
 
     print("usb_device:",usb_device,"cmd:",cmd,"data:",data,"write_address:",write_address,"read_address:",read_address)
-    execute_cmd(cmd,usb_device)
+    execute_cmd(cmd,usb_device,cmd_dict)
 
 if __name__ == "__main__":
     main()
