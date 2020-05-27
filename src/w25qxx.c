@@ -19,14 +19,28 @@ void DESELECT(void)
 
 uint8_t	W25qxx_Spi(uint8_t	Data)
 {
-	uint8_t	ret=0x63; // defualt value for debug
-	uint8_t	counter=25; // time out
+	uint8_t	ret=0x99; //defualt value
+	uint8_t	counter=40; // help counter for send cmd time out
+	/* Wait until the SPI flash is ready */
 	while ((HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY)){
 		counter=counter-1;
 		HAL_Delay(1);
+		if(counter == 10)
+		{
+			MX_SPI1_Init();
+			HAL_Delay(10);
+		}
 		if(counter <= 0)
+		{
+			char * str="TE"; /*Time out ERROR Message*/
+			debug_message(str,2);
+			HAL_Delay(10);
+			MX_SPI1_Init();
+			HAL_Delay(10);
 			break;
+		}
 	}
+
 	if(counter > 0)
 		HAL_SPI_TransmitReceive(&_W25QXX_SPI,&Data,&ret,1,SPI_TIMEOUT);
 	return ret;

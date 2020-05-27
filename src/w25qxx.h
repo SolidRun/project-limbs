@@ -15,6 +15,7 @@
 #define _W25QXX_USE_FREERTOS          0
 #define _W25QXX_DEBUG                 0
 #define SPI_TIMEOUT 1000
+#define W25QX32_LAST_ADDR	0x7d00	/* Max address 0x7d00 */
 
 /* M25P SPI Flash supported commands */
 #define SPINOR_OP_WREN		0x06	/* Write enable */

@@ -513,14 +513,15 @@ void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
 
     jedec_id=W25qxx_ReadID();
     reverse((char*) &jedec_id,0,3);
-    USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &jedec_id, 4);
+    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &jedec_id, 4);
+    //HAL_Delay(100);
 
-    W25qxx_WriteByte(0x97, 0x00ff100a);
+    W25qxx_WriteByte(0x79, 0x00005000);
     uint8_t pBuffer=0x63;
-    W25qxx_ReadByte(&pBuffer ,0x00ff100a);
-    HAL_Delay(100);
+    W25qxx_ReadByte(&pBuffer ,0x00005000);
+    //HAL_Delay(100);
     USBD_LL_Transmit(pdev,ep_addr,&pBuffer, 1);
-    HAL_Delay(100);
+    //HAL_Delay(100);
 
   }
 
