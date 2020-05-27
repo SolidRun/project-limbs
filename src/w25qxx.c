@@ -472,13 +472,16 @@ bool 	W25qxx_IsEmptyBlock(uint32_t Block_Address,uint32_t OffsetInByte,uint32_t 
 	return false;
 }
 
+
 void W25qxx_WriteByte(uint8_t pBuffer, uint32_t WriteAddr_inBytes)
 {
-	while(w25qxx.Lock==1)//#??
+	while(w25qxx.Lock==1)
 		W25qxx_Delay(1);
 	w25qxx.Lock=1;
+	HAL_Delay(100);
 	W25qxx_WaitForWriteEnd();
   W25qxx_WriteEnable();
+	HAL_Delay(120);
   SELECT();
   W25qxx_Spi(sFLASH_CMD_WRITE);
 	if(w25qxx.ID>=W25Q256)
@@ -490,7 +493,9 @@ void W25qxx_WriteByte(uint8_t pBuffer, uint32_t WriteAddr_inBytes)
 	DESELECT();
   W25qxx_WaitForWriteEnd();
 	w25qxx.Lock=0;
+
 }
+
 
 void 	W25qxx_WritePage(uint8_t *pBuffer	,uint32_t Page_Address,uint32_t OffsetInByte,uint32_t NumByteToWrite_up_to_PageSize)
 {

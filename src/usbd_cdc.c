@@ -519,9 +519,9 @@ void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
     W25qxx_WriteByte(0x79, 0x00005000);
     uint8_t pBuffer=0x63;
     W25qxx_ReadByte(&pBuffer ,0x00005000);
-    //HAL_Delay(100);
+    //HAL_Delay(50);
     USBD_LL_Transmit(pdev,ep_addr,&pBuffer, 1);
-    //HAL_Delay(100);
+    HAL_Delay(50);
 
   }
 
