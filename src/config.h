@@ -4,7 +4,7 @@
 /*
 adjust these to suit the application
 */
-#define NUM_OF_CDC_UARTS                    3
+#define NUM_OF_CDC_UARTS                    2
 # define ADC_ENABLE 1
 #define ADC_IT_MODE 0
 /* calculate voltage ADC factore
