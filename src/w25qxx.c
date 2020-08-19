@@ -33,7 +33,7 @@ uint8_t	W25qxx_Spi(uint8_t	Data)
 		if(counter <= 0)
 		{
 			char * str="TE"; /*Time out ERROR Message*/
-			debug_message(str,2);
+//			debug_message(str,2);
 			HAL_Delay(10);
 			MX_SPI1_Init();
 			HAL_Delay(10);
@@ -178,7 +178,7 @@ bool	W25qxx_Init(void)
 		break;
 		case 0x4016:	//	w25q32 **
 			w25qxx.ID=W25Q32;
-			w25qxx.BlockCount=64;
+			w25qxx.BlockCount=64; // 64KByte block size, page size 256B, sector size 4KB
 		break;
 		case 0x4015:	//	w25q16
 			w25qxx.ID=W25Q16;
@@ -478,10 +478,10 @@ void W25qxx_WriteByte(uint8_t pBuffer, uint32_t WriteAddr_inBytes)
 	while(w25qxx.Lock==1)
 		W25qxx_Delay(1);
 	w25qxx.Lock=1;
-	HAL_Delay(100);
+//	HAL_Delay(100);
 	W25qxx_WaitForWriteEnd();
   W25qxx_WriteEnable();
-	HAL_Delay(120);
+//	HAL_Delay(120);
   SELECT();
   W25qxx_Spi(sFLASH_CMD_WRITE);
 	if(w25qxx.ID>=W25Q256)
@@ -582,18 +582,18 @@ void 	W25qxx_WriteBlock	(uint8_t* pBuffer ,uint32_t Block_Address	,uint32_t Offs
 
 }
 
-void 	W25qxx_ReadByte(uint8_t *pBuffer,uint32_t Bytes_Address)
+void W25qxx_ReadByte(uint8_t *pBuffer,uint32_t Bytes_Address)
 {
 	while(w25qxx.Lock==1)
 		W25qxx_Delay(1);
 	w25qxx.Lock=1;
 	SELECT();
-  W25qxx_Spi(SPINOR_OP_READ_FAST);
+	W25qxx_Spi(SPINOR_OP_READ_FAST);
 	if(w25qxx.ID>=W25Q256)
 		W25qxx_Spi((Bytes_Address & 0xFF000000) >> 24);
-  W25qxx_Spi((Bytes_Address & 0xFF0000) >> 16);
-  W25qxx_Spi((Bytes_Address& 0xFF00) >> 8);
-  W25qxx_Spi(Bytes_Address & 0xFF);
+	W25qxx_Spi((Bytes_Address & 0xFF0000) >> 16);
+	W25qxx_Spi((Bytes_Address& 0xFF00) >> 8);
+	W25qxx_Spi(Bytes_Address & 0xFF);
 	W25qxx_Spi(0);
 	*pBuffer = W25qxx_Spi(W25QXX_DUMMY_BYTE);
 	DESELECT();
