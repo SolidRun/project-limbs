@@ -5,9 +5,10 @@ BIN = stm32cdcuart
 ##############################################################################
 .PHONY: all directory clean size
 
-CC = arm-none-eabi-gcc
-OBJCOPY = arm-none-eabi-objcopy
-SIZE = arm-none-eabi-size
+CROSS_COMPILE	?= arm-none-eabi-
+CC		= $(CROSS_COMPILE)gcc
+OBJCOPY		= $(CROSS_COMPILE)objcopy
+SIZE		= $(CROSS_COMPILE)size
 
 CFLAGS += -W -Wall --std=gnu99 -Os
 CFLAGS += -fno-diagnostics-show-caret
