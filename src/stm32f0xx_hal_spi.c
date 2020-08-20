@@ -479,7 +479,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint
   }
 
   /* Reset CRC Calculation */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     SPI_RESET_CRC(hspi);
   }
@@ -549,7 +549,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint
   }
 
   /* Enable CRC Transmission */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
      hspi->Instance->CR1|= SPI_CR1_CRCNEXT;
   }
@@ -626,7 +626,7 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
   hspi->TxXferCount = 0;
 
   /* Reset CRC Calculation */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     SPI_RESET_CRC(hspi);
     /* this is done to handle the CRCNEXT before the latest data */
@@ -706,7 +706,7 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
   }
 
   /* Handle the CRC Transmission */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     /* freeze the CRC before the latest data */
     hspi->Instance->CR1|= SPI_CR1_CRCNEXT;
@@ -834,7 +834,7 @@ __IO uint16_t tmpreg;
   hspi->TxXferSize  = Size;
 
   /* Reset CRC Calculation */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     SPI_RESET_CRC(hspi);
   }
@@ -871,7 +871,7 @@ __IO uint16_t tmpreg;
         hspi->TxXferCount--;
 
         /* Enable CRC Transmission */
-        if((hspi->TxXferCount == 0) && (hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
+        if((hspi->TxXferCount == 0) && (0))//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
         {
           /* Set NSS Soft to received correctly the CRC on slave mode with NSS pulse activated */
           if(((hspi->Instance->CR1 & SPI_CR1_MSTR) == 0) && ((hspi->Instance->CR2 & SPI_CR2_NSSP) == SPI_CR2_NSSP))
@@ -917,7 +917,7 @@ __IO uint16_t tmpreg;
         }
 
         /* Enable CRC Transmission */
-        if((hspi->TxXferCount == 0) && (hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
+        if((hspi->TxXferCount == 0) && (0))//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
         {
           /* Set NSS Soft to received correctly the CRC on slave mode with NSS pulse activated */
           if(((hspi->Instance->CR1 & SPI_CR1_MSTR) == 0) && ((hspi->Instance->CR2 & SPI_CR2_NSSP) == SPI_CR2_NSSP))
@@ -955,9 +955,8 @@ __IO uint16_t tmpreg;
       }
     }
   }
-
   /* Read CRC from DR to close CRC calculation process */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     /* Wait until TXE flag */
     if(SPI_WaitFlagStateUntilTimeout(hspi, SPI_FLAG_RXNE, SPI_FLAG_RXNE, Timeout) != HAL_OK)
@@ -995,7 +994,6 @@ __IO uint16_t tmpreg;
       }
     }
   }
-
   /* Check if CRC error occurred */
   if(__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_CRCERR) != RESET)
   {
@@ -1079,7 +1077,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit_IT(SPI_HandleTypeDef *hspi, uint8_t *pData, u
   }
 
   /* Reset CRC Calculation */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     SPI_RESET_CRC(hspi);
   }
@@ -1145,7 +1143,7 @@ HAL_StatusTypeDef HAL_SPI_Receive_IT(SPI_HandleTypeDef *hspi, uint8_t *pData, ui
     return HAL_SPI_TransmitReceive_IT(hspi,pData,pData,Size);
   }
 
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     hspi->CRCSize = 1;
     if((hspi->Init.DataSize <= SPI_DATASIZE_8BIT) && (hspi->Init.CRCLength == SPI_CRC_LENGTH_16BIT))
@@ -1180,7 +1178,7 @@ HAL_StatusTypeDef HAL_SPI_Receive_IT(SPI_HandleTypeDef *hspi, uint8_t *pData, ui
   }
 
   /* Reset CRC Calculation */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     SPI_RESET_CRC(hspi);
   }
@@ -1232,7 +1230,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_IT(SPI_HandleTypeDef *hspi, uint8_t *p
   }
 
   hspi->CRCSize = 0;
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     hspi->CRCSize = 1;
     if((hspi->Init.DataSize <= SPI_DATASIZE_8BIT) && (hspi->Init.CRCLength == SPI_CRC_LENGTH_16BIT))
@@ -1267,7 +1265,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_IT(SPI_HandleTypeDef *hspi, uint8_t *p
   }
 
   /* Reset CRC Calculation */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     SPI_RESET_CRC(hspi);
   }
@@ -1344,7 +1342,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit_DMA(SPI_HandleTypeDef *hspi, uint8_t *pData, 
   }
 
   /* Reset CRC Calculation */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     SPI_RESET_CRC(hspi);
   }
@@ -1447,7 +1445,7 @@ HAL_StatusTypeDef HAL_SPI_Receive_DMA(SPI_HandleTypeDef *hspi, uint8_t *pData, u
   }
 
   /* Reset CRC Calculation */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     SPI_RESET_CRC(hspi);
   }
@@ -1546,7 +1544,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_DMA(SPI_HandleTypeDef *hspi, uint8_t *
   hspi->RxXferCount = Size;
 
   /* Reset CRC Calculation + increase the rxsize */
-  if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+  if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
   {
     SPI_RESET_CRC(hspi);
   }
@@ -2008,7 +2006,7 @@ static void SPI_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
     __IO uint16_t tmpreg;
 
     /* CRC handling */
-    if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+    if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
     {
       /* Wait until TXE flag */
       if(SPI_WaitFlagStateUntilTimeout(hspi, SPI_FLAG_RXNE, SPI_FLAG_RXNE, SPI_DEFAULT_TIMEOUT) != HAL_OK)
@@ -2084,7 +2082,7 @@ static void SPI_DMATransmitReceiveCplt(DMA_HandleTypeDef *hdma)
   {
     __IO int16_t tmpreg;
     /* CRC handling */
-    if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+    if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
     {
       if((hspi->Init.DataSize == SPI_DATASIZE_8BIT) && (hspi->Init.CRCLength == SPI_CRC_LENGTH_8BIT))
       {
@@ -2226,7 +2224,7 @@ static void SPI_2linesRxISR_8BIT(struct __SPI_HandleTypeDef *hspi)
   /* check end of the reception */
   if(hspi->RxXferCount == 0)
   {
-    if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+    if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
     {
       SET_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
       hspi->RxISR =  SPI_2linesRxISR_8BITCRC;
@@ -2295,7 +2293,7 @@ static void SPI_2linesTxISR_8BIT(struct __SPI_HandleTypeDef *hspi)
   /* check the end of the transmission */
   if(hspi->TxXferCount == 0)
   {
-    if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+    if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
     {
       SET_BIT(hspi->Instance->CR1, SPI_CR1_CRCNEXT);
       __HAL_SPI_DISABLE_IT(hspi, SPI_IT_TXE);
@@ -2326,7 +2324,7 @@ static void SPI_2linesRxISR_16BIT(struct __SPI_HandleTypeDef *hspi)
 
   if(hspi->RxXferCount == 0)
   {
-    if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+    if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
     {
       hspi->RxISR =  SPI_2linesRxISR_16BITCRC;
       return;
@@ -2377,7 +2375,7 @@ static void SPI_2linesTxISR_16BIT(struct __SPI_HandleTypeDef *hspi)
   /* Enable CRC Transmission */
   if(hspi->TxXferCount == 0)
   {
-    if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+    if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
     {
       SET_BIT(hspi->Instance->CR1, SPI_CR1_CRCNEXT);
       __HAL_SPI_DISABLE_IT(hspi, SPI_IT_TXE);
@@ -2425,14 +2423,14 @@ static void SPI_RxISR_8BIT(struct __SPI_HandleTypeDef *hspi)
   hspi->RxXferCount--;
 
   /* Enable CRC Transmission */
-  if((hspi->RxXferCount == 1) && (hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
+  if((hspi->RxXferCount == 1) && (0))//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
   {
     hspi->Instance->CR1 |= SPI_CR1_CRCNEXT;
   }
 
   if(hspi->RxXferCount == 0)
   {
-    if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+    if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
     {
       hspi->RxISR =  SPI_RxISR_8BITCRC;
       return;
@@ -2474,14 +2472,14 @@ static void SPI_RxISR_16BIT(struct __SPI_HandleTypeDef *hspi)
   hspi->RxXferCount--;
 
   /* Enable CRC Transmission */
-  if((hspi->RxXferCount == 1) && (hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
+  if((hspi->RxXferCount == 1) && (0))//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE))
   {
     hspi->Instance->CR1 |= SPI_CR1_CRCNEXT;
   }
 
   if(hspi->RxXferCount == 0)
   {
-    if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+    if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
     {
       hspi->RxISR = SPI_RxISR_16BITCRC;
       return;
@@ -2503,7 +2501,7 @@ static void SPI_TxISR_8BIT(struct __SPI_HandleTypeDef *hspi)
 
   if(hspi->TxXferCount == 0)
   {
-    if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+    if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
     {
       /* Enable CRC Transmission */
       hspi->Instance->CR1 |= SPI_CR1_CRCNEXT;
@@ -2527,7 +2525,7 @@ static void SPI_TxISR_16BIT(struct __SPI_HandleTypeDef *hspi)
 
   if(hspi->TxXferCount == 0)
   {
-    if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+    if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
     {
       /* Enable CRC Transmission */
       hspi->Instance->CR1 |= SPI_CR1_CRCNEXT;
@@ -2569,7 +2567,7 @@ static HAL_StatusTypeDef SPI_WaitFlagStateUntilTimeout(SPI_HandleTypeDef *hspi, 
         }
 
         /* Reset CRC Calculation */
-        if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+        if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
         {
           SPI_RESET_CRC(hspi);
         }
@@ -2628,7 +2626,7 @@ static HAL_StatusTypeDef SPI_WaitFifoStateUntilTimeout(SPI_HandleTypeDef *hspi, 
         }
 
         /* Reset CRC Calculation */
-        if(hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
+        if(0)//hspi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLE)
         {
           SPI_RESET_CRC(hspi);
         }

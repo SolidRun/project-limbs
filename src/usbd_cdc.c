@@ -41,17 +41,10 @@ extern USBD_HandleTypeDef USBD_Device;
 
 /* CDC buffers declaration for VCP */
 static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length);
-void debug_message(char * message, uint8_t message_size );
-#define BUF_SIZE 15
-// TX
-uint8_t vcp_tx[BUF_SIZE];
-uint16_t countTx=0;
-uint16_t writePointerTx=0, readPointerTx=0;
+#define BUF_SIZE 90 //15 //256
 // RX
 uint8_t vcp_rx[BUF_SIZE];
-uint16_t countRx=0;
-uint16_t writePointerRx=0, readPointerRx=0;
-uint8_t res[7]="ls\n\r";
+uint16_t writePointerRx=0;
 
 /* ADC Help */
 #if ADC_ENABLE
@@ -184,6 +177,7 @@ static uint8_t USBD_CDC_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 
   for (index = 0; index < NUM_OF_CDC_UARTS; index++,hcdc++)
   {
+#if 0 /* Never reached */
     if (index == 2){ // #VCP
       // TO DO
     #if 1
@@ -212,6 +206,7 @@ static uint8_t USBD_CDC_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 
     }
     else
+#endif
     {
       /* Open EP IN */
       USBD_LL_OpenEP(pdev, parameters[index].data_in_ep, USBD_EP_TYPE_BULK, USB_FS_MAX_PACKET_SIZE);
@@ -353,9 +348,10 @@ static uint8_t USBD_CDC_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
 }
 
 // help functions - compare between two strings
-int my_strcmp(char *strg1, char *strg2)
+int my_strcmp(USBD_HandleTypeDef *pdev, uint8_t ep_addr,
+		char *strg1, char *strg2)
 {
-    while( ( *strg1 != '\0' && *strg2 != '\0' ) && *strg1 == *strg2 )
+    while( ( (*strg1 != 0) && (*strg2 != 0) ) && (*strg1 == *strg2) )
     {
         strg1++;
         strg2++;
@@ -370,13 +366,23 @@ int my_strcmp(char *strg1, char *strg2)
     }
 }
 
-void debug_message(char * message, uint8_t message_size )
-{
-  USBD_HandleTypeDef *pdev = &USBD_Device;
-  uint8_t usart2_data_in_ep = 0x83;//0x81
-  //uint8_t message_size = sizeof(message)/sizeof(char);
-  USBD_LL_Transmit(pdev,usart2_data_in_ep,(uint8_t *)message, message_size);
-}
+uint32_t my_strtol_16(char *op) {
+	uint32_t result = 0;
+	int i = 2, num;
+	if ((op[0] != '0') || (op[1] != 'x')) return 0;
+	for (i = 2 ; i < 10 ; i ++) {
+		char ch = op[i];
+		if (!ch) break;
+		if ((ch >= '0') && (ch <= '9')) ch = ch-'0';
+		else if ((ch >= 'a') && (ch <= 'f')) ch = ch-'a'+10;
+		else if ((ch >= 'A') && (ch <= 'F')) ch = ch-'A'+10;
+		result = (result << 4) | (ch & 0xf);
+	}
+	return result;
+}	
+		
+
+	
 
 #if ADC_ENABLE
 
@@ -467,15 +473,17 @@ void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
     const char * v_new_line = "v\r\n";
     char * str_adc_voltage = strcat(strcat(adc_buff,point) ,strcat(lower_buff, v_new_line));
     USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)str_adc_voltage,strlen(str_adc_voltage) );
+	HAL_Delay(100);
+    
 }
 
 #endif
 
 #if SPI_ENABLE
 
-  /* help function to reverse string */
-  void reverse(char *x, uint8_t begin, uint8_t end)
-  {
+/* help function to reverse string */
+void reverse(char *x, uint8_t begin, uint8_t end)
+{
      char c;
 
      if (begin >= end)
@@ -486,74 +494,58 @@ void Voltage_Cmd(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
      *(x+end)   = c;
 
      reverse(x, ++begin, --end);
-  }
+}
 
-  volatile uint32_t jedec_id=0;
-  /* show the W25qxx spi flash JEDEC ID (0x40ef16 -> W25Q32) */
-  void spi_flash_id(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
-  {
+volatile uint32_t jedec_id=0;
+/* show the W25qxx spi flash JEDEC ID (0x0040ef16 -> W25Q32) */
+void spi_flash_id(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
+{
     jedec_id=W25qxx_ReadID();
     reverse((char*) &jedec_id,0,3);
     USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &jedec_id, 4);
-  }
+}
 
-  /* show the W25qxx UniqID */
-  void spi_flash_uniq_id(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
-  {
-    USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &w25qxx.UniqID, 8);
-  }
+/* show the W25qxx UniqID */
+void spi_flash_uniq_id(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
+{
+	USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &w25qxx.UniqID, 8);
+}
+void spi_read_mem(USBD_HandleTypeDef *pdev,uint8_t ep_addr,uint32_t address)
+{
+	uint8_t pBuffer=0x63;
+	W25qxx_ReadByte(&pBuffer ,address);
+	USBD_LL_Transmit(pdev,ep_addr,&pBuffer, 1);
+	HAL_Delay(1);
+}
 
-
-  void spi_test(USBD_HandleTypeDef *pdev,uint8_t ep_addr)
-  {
-    if (w25qxx.ID == W25Q32){
-      USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)res,4);
-      HAL_Delay(100);
-    }
-
-    jedec_id=W25qxx_ReadID();
-    reverse((char*) &jedec_id,0,3);
-    //USBD_LL_Transmit(pdev,ep_addr,(uint8_t*) &jedec_id, 4);
-    //HAL_Delay(100);
-
-    W25qxx_WriteByte(0x79, 0x00005000);
-    uint8_t pBuffer=0x63;
-    W25qxx_ReadByte(&pBuffer ,0x00005000);
-    //HAL_Delay(50);
-    USBD_LL_Transmit(pdev,ep_addr,&pBuffer, 1);
-    HAL_Delay(50);
-
-  }
+void spi_write_mem(USBD_HandleTypeDef *pdev,uint8_t ep_addr,uint32_t address,uint8_t data)
+{
+	W25qxx_WriteByte(data, address);
+}
 
 #endif
+#if 1
+static char *arr_cmd[] = {
+     "re", // reset
+     "pl", // power button low (assert)
+     "ph", // power button high (de-assert)
+     "vn", // short vbat transistor
+     "vf", // disconnect vbat transistor
+     "cu", // measure current
+     "vo", // measure voltage
+     "ss", // spi mux on stm
+     "sc", // spi mux on com
+     "si", // spi id
+     "su", // spi uniq id
+     "sr", // spi read
+     "sw", // spi write
+     "se", // spi erase
+     "el", // nop
+   };
+#else
 
-
-static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length) // #VCP
-{
-  /* Comands ID */
-  enum CMD_ID{
-        RESET,
-        POWERON,
-        POWEROFF,
-        POWERBTN_LOW,
-        POWERBTN_HIGH,
-        VBATON,
-        VBATOFF,
-        CURRENT,
-        VOLTAGE,
-        SPI_SW_STM,
-        SPI_SW_COM,
-        SPI_TEST,
-        SPI_ID,
-        SPI_UNIQ_ID,
-        CMD_NUM
-  };
-
-  //#define CMD_NUM 13
-  char *arr_cmd[] = {
+static char arr_cmd[18][16] = {
      "reset",
-     "poweron",
-     "poweroff",
      "powerbtn_low",
      "powerbtn_high",
      "vbaton",
@@ -562,23 +554,78 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
      "voltage",
      "spi_sw_stm",
      "spi_sw_com",
-     "spi_test",
      "spi_id",
      "spi_uniq_id",
-     "else"
+     "spi_r",
+     "spi_w",
+     "spi_erase_chip",
+     "else",
    };
 
-  // CMD string to CMD_ID
-  int8_t cmd_id=-1;
-  for (int8_t i=0; i <= CMD_NUM; i++)
-  {
-    cmd_id=i;
-    //if(strcmp((char*)pbuf,(char*)arr_cmd[i]) == 0) break;
-    if(my_strcmp((char*)pbuf,(char*)arr_cmd[i]) == 0) break;
-  }
-    //char s[100];
-    //printf("Reverse of the string: %s\n", s);
-    // USER CODE BEGIN 5 - Execute the CMD
+#endif
+
+static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length) // #VCP
+{
+  /* Comands ID */
+  enum CMD_ID{
+        RESET = 0,
+        POWERBTN_LOW,
+        POWERBTN_HIGH,
+        VBATON,
+        VBATOFF,
+        CURRENT,
+        VOLTAGE,
+        SPI_SW_STM,
+        SPI_SW_COM,
+        SPI_ID,
+        SPI_UNIQ_ID,
+        SPI_R,
+        SPI_W,
+	SPI_ERASE_CHIP,
+        CMD_NUM
+  };
+
+
+	uint32_t addr,data;
+	char *opcode = (char *)pbuf, *op1 = 0, *op2 = 0;
+	int i;
+	int8_t cmd_id=-1;
+	for (i = 0 ; i < length ; i++) {
+		if (pbuf[i] == 0) break;
+		if (pbuf[i] == ' ') {
+			if (!op2 && op1) op2 = (char *)pbuf + i + 1;
+			if (!op1) op1 = (char *)pbuf + i + 1;
+			pbuf[i] = 0;
+		}
+	}
+	for (i=0; i < CMD_NUM; i++) {
+		cmd_id=i;
+		if (my_strcmp (pdev, ep_addr, opcode, arr_cmd[i]) == 0) {
+//			USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)"FOUND MATCH\n\r",13); HAL_Delay(10);
+		       	break;
+		}
+	}
+#if 0
+	if (op1) {
+			USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)"OP1 is\n\r",8); HAL_Delay(100);
+			i = 0;
+			while (1) {
+				USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)&op1[i],1); HAL_Delay(10);
+				if (!op1[i]) break;
+				i++;
+			}
+	}
+
+	if (op2) {
+			USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)"OP2 is\n\r",8); HAL_Delay(100);
+			i = 0;
+			while (1) {
+				USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)&op2[i],1); HAL_Delay(10);
+				if (!op2[i]) break;
+				i++;
+			}
+	}
+#endif
     switch(cmd_id)
     {
       case RESET:
@@ -587,6 +634,7 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         HAL_Delay(100);
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
         break;
+#if 0
       case POWERON:
         /* Short Press POWER-ON Button */
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
@@ -599,6 +647,7 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         HAL_Delay(10000);
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
         break;
+#endif
       case POWERBTN_LOW:
         /* Press POWER Button */
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
@@ -635,182 +684,74 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         /* Connect the spi-flash to the COM */
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_RESET);
         break;
-      case SPI_TEST:
-        spi_test(pdev,ep_addr);
-        break;
       case SPI_ID:
         spi_flash_id(pdev,ep_addr);
         break;
       case SPI_UNIQ_ID:
         spi_flash_uniq_id(pdev,ep_addr);
         break;
+	case SPI_R:
+		/* op1 = address */
+		addr=my_strtol_16(op1);
+//		USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)&addr,4); HAL_Delay(50);
+		spi_read_mem(pdev,ep_addr,addr);//*((uint32_t*)&op1[0]));
+		break;
+	case SPI_W:
+		/* op1 = address, op2 = data */
+		addr=my_strtol_16(op1);
+		data=my_strtol_16(op2);
+//		USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)&addr,4); HAL_Delay(50);
+//		USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)&data,4); HAL_Delay(50);
+		spi_write_mem(pdev,ep_addr,addr,data);//*(uint32_t*)&op1[0],*((uint32_t*)&op2[0]));
+		break;
+	case SPI_ERASE_CHIP:
+		USBD_LL_Transmit(pdev,ep_addr,(uint8_t*)"Starting SPI chip erase...",26); HAL_Delay(10);
+		W25qxx_EraseChip();
+		USBD_LL_Transmit(pdev,ep_addr,(uint8_t*)"Done\n\r",6); HAL_Delay(10);
+		break;
       case CMD_NUM:
-        break;
       default:
-        //return (USBD_FAIL);
         break;
     }
-
     return (USBD_OK);
     /* USER CODE END 5 */
 }
 
-const char hi[]="hi\n\r";
-const char TEST[]="ls\n\r";
-uint8_t new_line[3]="\n\r";
 static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
-  USBD_CDC_HandleTypeDef *hcdc = context;
-  uint32_t RxLength;
-  unsigned index;
-  for (index = 0; index < NUM_OF_CDC_UARTS; index++,hcdc++)
-  {
-    if (parameters[index].data_out_ep == epnum)
-    {
-        /* Get the received data length */
-        RxLength = USBD_LL_GetRxDataSize (pdev, epnum);
-        HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)hcdc->OutboundBuffer, RxLength);
-
-      if (hcdc->UartHandle.Instance == USART2) // #VCP
-      {
-        uint8_t * outbuff = (uint8_t *)hcdc->OutboundBuffer;
-        for ( uint8_t i=0; i< (uint8_t)RxLength; i++,outbuff++)
-        {
-           //0:when need to use the USART2 and VCP in the same interface ACM1
-          #if USART2_VCP_REPRINT_ENABLE
-          // reprint
-          if ( (char) *outbuff == '\n' || (char) *outbuff == (char)'\r' || *outbuff == (uint8_t)'\n' || (uint8_t)*outbuff == 10 || (uint8_t)*outbuff == 13)
-            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,new_line, 2);
-          else
-            USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)hcdc->OutboundBuffer, RxLength);
-          #endif
-
-          #if 1
-            // reset cmd_id
-            if ( (char) *outbuff == '1' )
-            {
-              HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_RESET);
-              HAL_Delay(100);
-              HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
-            }
-            // poweron cmd_id
-            if ( (char) *outbuff == '2' )
-            {
-              HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
-              HAL_Delay(100);
-              HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
-            }
-            // poweroff cmd_id
-            if ( (char) *outbuff == '3' )
-            {
-              HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
-              HAL_Delay(10000);
-              HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
-            }
-            // powerbtn
-            if ( (char) *outbuff == '4' )
-            {
-              HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
-            }
-            // voltage
-            if ( (char) *outbuff == '5' )
-            {
-
-              sConfig.Channel = ADC_CHANNEL_8;
-              if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-              {
-                Error_Handler_ADC();
-              }
-
-              adcvalue=ADC_Read();
-              double d_adcvalue=(double)adcvalue * VOLTAGE_ADC_FACTORE;
-              //itoa(adcvalue,adc_buff,10);
-              //USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)adc_buff, ADC_VALUE_SIZE);
-              itoa(d_adcvalue,adc_buff,10);
-
-              const char * point=".";
-              char adc_buff2[4];
-              uint16_t d_adcvalue2=(d_adcvalue-(double)StringToInt(adc_buff))*1000;
-              itoa(d_adcvalue2,adc_buff2,10);
-
-              const char * v_new_line="v\r\n";
-              char * str_adc_value=strcat(strcat(adc_buff,point) ,strcat(adc_buff2, v_new_line));
-              //char * str_adc_value=strcat(adc_buff, v_new_line);
-              //sprintf(adc_buff,"%hd\n",(short)adcvalue);
-              USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)str_adc_value, ADC_VALUE_SIZE+2);
-
-            }
-            // current
-            if ( (char) *outbuff == '6' )
-            {
-              /** Configure for the selected ADC regular channel to be converted.
-              */
-
-              sConfig.Channel = ADC_CHANNEL_9;
-              if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-              {
-                Error_Handler_ADC();
-              }
-              adcvalue=ADC_Read();
-              double d_adcvalue=(double)adcvalue * VOLTAGE_ADC_FACTORE;
-              //itoa(adcvalue,adc_buff,10);
-              //USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)adc_buff, ADC_VALUE_SIZE);
-              itoa(d_adcvalue,adc_buff,10);
-
-              const char * point=".";
-              char adc_buff2[4];
-              uint16_t d_adcvalue2=(d_adcvalue-(double)StringToInt(adc_buff))*1000;
-              itoa(d_adcvalue2,adc_buff2,10);
-
-              const char * v_new_line="v\r\n";
-              char * str_adc_value=strcat(strcat(adc_buff,point) ,strcat(adc_buff2, v_new_line));
-              //char * str_adc_value=strcat(adc_buff, v_new_line);
-              //sprintf(adc_buff,"%hd\n",(short)adcvalue);
-              USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t *)str_adc_value, ADC_VALUE_SIZE+2);
-            }
-
-            // SPI
-            if ( (char) *outbuff == '7' )
-            {
-              jedec_id=W25qxx_ReadID();
-              reverse((char*) &jedec_id,0,3);
-              USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t*) &jedec_id, 4);
-            }
-
-            if ( (char) *outbuff == '8' )
-            {
-              char * str="Welcome-Project-Limps !\r\n";
-              debug_message(str,25);
-            }
-
-          #endif
-
-          // input managment
-          if ( (char) *outbuff == '\n' ||(char) *outbuff == '-' || countRx >= BUF_SIZE-1 )
-          {
-            vcp_rx[writePointerRx]=(uint8_t)'\0';
-            vcp_cmd_control(pdev,parameters[index].data_in_ep,vcp_rx,countRx);
-            #if USART2_VCP_REPRINT_ENABLE
-              USBD_LL_Transmit(pdev,parameters[index].data_in_ep,vcp_rx,countRx);
-            #endif
-            writePointerRx=0;
-            countRx=0;
-          }
-          else {
-            vcp_rx[writePointerRx]=(uint8_t)*outbuff;
-            writePointerRx++;
-            countRx++;
-          }
-
-        }
-
-      }
-
-    break;
-    }
-  }
-
-  return USBD_OK;
+	USBD_CDC_HandleTypeDef *hcdc = context;
+	uint32_t RxLength;
+	unsigned index;
+	for (index = 0; index < NUM_OF_CDC_UARTS; index++,hcdc++) {
+		if (parameters[index].data_out_ep == epnum) {
+			/* Get the received data length */
+			RxLength = USBD_LL_GetRxDataSize (pdev, epnum);
+			if (hcdc->UartHandle.Instance == USART1)
+				HAL_UART_Transmit_DMA(&hcdc->UartHandle, (uint8_t *)hcdc->OutboundBuffer, RxLength);
+			if (hcdc->UartHandle.Instance == USART2) { // #VCP
+				int i;
+				int8_t *buff = (int8_t *)hcdc->OutboundBuffer;
+				for (i = 0 ; i < (int)RxLength; i++ ){
+					vcp_rx[writePointerRx] = buff[i];
+// This will echo the command back					USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t*)&buff[i],1); HAL_Delay(10);
+					if ((buff[i] == '\n') || (writePointerRx == (BUF_SIZE-1))) {
+						vcp_rx[writePointerRx] = 0;
+#if 1
+						vcp_cmd_control(pdev, parameters[index].data_in_ep,
+							       vcp_rx,
+							       writePointerRx + 1);
+#endif
+						memset(vcp_rx, 0, BUF_SIZE);
+						writePointerRx = 0;
+						
+			      		} else writePointerRx++;
+				}
+				USBD_CDC_ReceivePacket(pdev, index);
+			}
+			break;
+		}
+	}
+	return USBD_OK;
 }
 
 static uint8_t USBD_CDC_SOF (struct _USBD_HandleTypeDef *pdev)
