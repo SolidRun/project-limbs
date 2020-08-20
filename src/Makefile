@@ -21,7 +21,7 @@ CFLAGS += -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable # supp
 
 LDFLAGS += -mcpu=cortex-m0 -mthumb
 LDFLAGS += -Wl,--gc-sections
-LDFLAGS += -Wl,--script=./linker/stm32f042x6.ld
+LDFLAGS += -Wl,--script=./linker/stm32f042x4.ld
 #stm32f072xB.ld
 
 INCLUDES += \
