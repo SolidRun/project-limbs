@@ -41,7 +41,7 @@ extern USBD_HandleTypeDef USBD_Device;
 
 /* CDC buffers declaration for VCP */
 static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length);
-#define BUF_SIZE 90 //15 //256
+#define BUF_SIZE 300
 // RX
 uint8_t vcp_rx[BUF_SIZE];
 uint16_t writePointerRx=0;
@@ -526,7 +526,10 @@ void spi_write_mem(USBD_HandleTypeDef *pdev,uint8_t ep_addr,uint32_t address,uin
 #endif
 #if 1
 static char *arr_cmd[] = {
-     "re", // reset
+     "ra", // reset assert
+     "rd", // reset deassert
+     "fl", // Force recovery signal low
+     "ff", // Force recovery signal float
      "pl", // power button low (assert)
      "ph", // power button high (de-assert)
      "vn", // short vbat transistor
@@ -537,8 +540,8 @@ static char *arr_cmd[] = {
      "sc", // spi mux on com
      "si", // spi id
      "su", // spi uniq id
-     "sr", // spi read
-     "sw", // spi write
+     "sr", // spi byte read
+     "sw", // spi byte write
      "se", // spi erase
      "el", // nop
    };
@@ -546,6 +549,8 @@ static char *arr_cmd[] = {
 
 static char arr_cmd[18][16] = {
      "reset",
+     "forcebios_low",
+     "forcebios_high",
      "powerbtn_low",
      "powerbtn_high",
      "vbaton",
@@ -566,24 +571,27 @@ static char arr_cmd[18][16] = {
 
 static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length) // #VCP
 {
-  /* Comands ID */
-  enum CMD_ID{
-        RESET = 0,
-        POWERBTN_LOW,
-        POWERBTN_HIGH,
-        VBATON,
-        VBATOFF,
-        CURRENT,
-        VOLTAGE,
-        SPI_SW_STM,
-        SPI_SW_COM,
-        SPI_ID,
-        SPI_UNIQ_ID,
-        SPI_R,
-        SPI_W,
-	SPI_ERASE_CHIP,
-        CMD_NUM
-  };
+	/* Comands ID */
+	enum CMD_ID{
+		RESET_ASSERT = 0,
+		RESET_DEASSERT,
+		FORCE_RECOVERY_LOW,
+		FORCE_RECOVERY_FLOAT,
+		POWERBTN_LOW,
+		POWERBTN_HIGH,
+		VBATON,
+		VBATOFF,
+		CURRENT,
+		VOLTAGE,
+		SPI_SW_STM,
+		SPI_SW_COM,
+		SPI_ID,
+		SPI_UNIQ_ID,
+		SPI_R,
+		SPI_W,
+		SPI_ERASE_CHIP,
+		CMD_NUM
+	};
 
 
 	uint32_t addr,data;
@@ -628,12 +636,14 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
 #endif
     switch(cmd_id)
     {
-      case RESET:
-        /* Short Press RESET Button */
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_RESET);
-        HAL_Delay(100);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
-        break;
+	case RESET_ASSERT:
+		/* Assert the reset signal */
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_RESET);
+		break;
+	case RESET_DEASSERT:
+		/* Deassert the reset signal (open drain) */
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
+		break;
 #if 0
       case POWERON:
         /* Short Press POWER-ON Button */
@@ -648,6 +658,14 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
         break;
 #endif
+	case FORCE_RECOVERY_LOW:
+	/* Set the force recovery signal to low */
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15,GPIO_PIN_RESET);
+        break;
+	case FORCE_RECOVERY_FLOAT:
+        /* Unset the force recovery signal */
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15,GPIO_PIN_SET);
+        break;
       case POWERBTN_LOW:
         /* Press POWER Button */
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
