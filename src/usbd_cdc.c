@@ -36,12 +36,13 @@
 #include "spi.h"
 #include "w25qxx.h"
 
+#define PAGE_SIZE	sFLASH_SPI_PAGESIZE
 /* USB handle declared in main.c */
 extern USBD_HandleTypeDef USBD_Device;
 
 /* CDC buffers declaration for VCP */
 static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length);
-#define BUF_SIZE 300
+#define BUF_SIZE 550 /* Should hold spi page program */
 // RX
 uint8_t vcp_rx[BUF_SIZE];
 uint16_t writePointerRx=0;
@@ -53,28 +54,6 @@ uint16_t writePointerRx=0;
   uint16_t adcvalue=0;
   #define ADC_VALUE_SIZE 7
   char adc_buff[ADC_VALUE_SIZE];
-#endif
-
-/* SPI Help */
-#if SPI_ENABLE
-
-  #if 0
-    /* remove from spi.c to usbd_cdc.c */
-    // SPI transfer Status
-    enum {
-      TRANSFER_WAIT,
-      TRANSFER_COMPLETE,
-      TRANSFER_ERROR
-    };
-    /* transfer state */
-    extern __IO uint32_t wTransferState;
-    #define SPI_BUFFERSIZE 8
-    /* Buffer used for transmission */
-    extern uint8_t spiTxBuffer[SPI_BUFFERSIZE];
-    /* Buffer used for reception */
-    extern uint8_t spiRxBuffer[SPI_BUFFERSIZE];
-  #endif
-
 #endif
 
 /* local function prototyping */
@@ -370,7 +349,7 @@ uint32_t my_strtol_16(char *op) {
 	uint32_t result = 0;
 	int i = 2, num;
 	if ((op[0] != '0') || (op[1] != 'x')) return 0;
-	for (i = 2 ; i < 10 ; i ++) {
+	for (i = 2 ; i < (2 + 8 /* 0x12345678 */) ; i ++) {
 		char ch = op[i];
 		if (!ch) break;
 		if ((ch >= '0') && (ch <= '9')) ch = ch-'0';
@@ -380,8 +359,26 @@ uint32_t my_strtol_16(char *op) {
 	}
 	return result;
 }	
-		
 
+int my_long_strtol_16(char *op, uint8_t *buffer, int max_chars) {
+	uint32_t result = 0;
+	int i = 2, num = 0;
+	if ((op[0] != '0') || (op[1] != 'x')) return -1;
+	for (i = 2 ; i < (2 + max_chars) ; i ++) {
+		char ch = op[i];
+		if ((i >= 4) && (!(i%2))) {
+		       buffer[(i-4) >> 1] = (uint8_t) result;
+		       result = 0;
+		       num++;
+		}
+		if (!ch) break;
+		if ((ch >= '0') && (ch <= '9')) ch = ch-'0';
+		else if ((ch >= 'a') && (ch <= 'f')) ch = ch-'a'+10;
+		else if ((ch >= 'A') && (ch <= 'F')) ch = ch-'A'+10;
+		result = (result << 4) | (ch & 0xf);
+	}
+	return num;
+}
 	
 
 #if ADC_ENABLE
@@ -524,56 +521,35 @@ void spi_write_mem(USBD_HandleTypeDef *pdev,uint8_t ep_addr,uint32_t address,uin
 }
 
 #endif
-#if 1
 static char *arr_cmd[] = {
-     "ra", // reset assert
-     "rd", // reset deassert
-     "fl", // Force recovery signal low
-     "ff", // Force recovery signal float
-     "pl", // power button low (assert)
-     "ph", // power button high (de-assert)
-     "vn", // short vbat transistor
-     "vf", // disconnect vbat transistor
-     "cu", // measure current
-     "vo", // measure voltage
-     "ss", // spi mux on stm
-     "sc", // spi mux on com
-     "si", // spi id
-     "su", // spi uniq id
-     "sr", // spi byte read
-     "sw", // spi byte write
-     "se", // spi erase
-     "el", // nop
-   };
-#else
-
-static char arr_cmd[18][16] = {
-     "reset",
-     "forcebios_low",
-     "forcebios_high",
-     "powerbtn_low",
-     "powerbtn_high",
-     "vbaton",
-     "vbatoff",
-     "current",
-     "voltage",
-     "spi_sw_stm",
-     "spi_sw_com",
-     "spi_id",
-     "spi_uniq_id",
-     "spi_r",
-     "spi_w",
-     "spi_erase_chip",
-     "else",
-   };
-
-#endif
+	"re", // MCU Reset
+	"ra", // reset assert
+	"rd", // reset deassert
+	"fl", // Force recovery signal low
+	"ff", // Force recovery signal float
+	"pl", // power button low (assert)
+	"ph", // power button high (de-assert)
+	"vn", // short vbat transistor
+	"vf", // disconnect vbat transistor
+	"cu", // measure current
+	"vo", // measure voltage
+	"ss", // spi mux on stm
+	"sc", // spi mux on com
+	"si", // spi id
+	"su", // spi uniq id
+	"sr", // spi byte read
+	"sw", // spi byte write
+	"sp", // spi page write
+	"se", // spi erase
+	"el", // nop
+};
 
 static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t* pbuf, uint16_t length) // #VCP
 {
 	/* Comands ID */
 	enum CMD_ID{
-		RESET_ASSERT = 0,
+		MCU_RESET = 0,
+		RESET_ASSERT,
 		RESET_DEASSERT,
 		FORCE_RECOVERY_LOW,
 		FORCE_RECOVERY_FLOAT,
@@ -589,15 +565,19 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
 		SPI_UNIQ_ID,
 		SPI_R,
 		SPI_W,
+		SPI_PAGE_W,
 		SPI_ERASE_CHIP,
 		CMD_NUM
 	};
 
 
 	uint32_t addr,data;
+	uint8_t buffer[PAGE_SIZE]; /* Holds page */
 	char *opcode = (char *)pbuf, *op1 = 0, *op2 = 0;
-	int i;
+	int i, page_write_length = 0;
 	int8_t cmd_id=-1;
+
+	/* Mark op1 and op2 start pointer; and then replace space with null */
 	for (i = 0 ; i < length ; i++) {
 		if (pbuf[i] == 0) break;
 		if (pbuf[i] == ' ') {
@@ -636,6 +616,10 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
 #endif
     switch(cmd_id)
     {
+	case MCU_RESET:
+		/* Reset the MCU; should go back to DFU mode */
+		HAL_NVIC_SystemReset();
+		break;
 	case RESET_ASSERT:
 		/* Assert the reset signal */
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_RESET);
@@ -644,20 +628,6 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
 		/* Deassert the reset signal (open drain) */
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,GPIO_PIN_SET);
 		break;
-#if 0
-      case POWERON:
-        /* Short Press POWER-ON Button */
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
-        HAL_Delay(100);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
-        break;
-      case POWEROFF:
-        /* Long Press POWER-OFF Button */
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_RESET);
-        HAL_Delay(10000);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,GPIO_PIN_SET);
-        break;
-#endif
 	case FORCE_RECOVERY_LOW:
 	/* Set the force recovery signal to low */
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15,GPIO_PIN_RESET);
@@ -702,26 +672,32 @@ static int8_t vcp_cmd_control(USBD_HandleTypeDef *pdev,uint8_t ep_addr, uint8_t*
         /* Connect the spi-flash to the COM */
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,GPIO_PIN_RESET);
         break;
-      case SPI_ID:
-        spi_flash_id(pdev,ep_addr);
-        break;
-      case SPI_UNIQ_ID:
-        spi_flash_uniq_id(pdev,ep_addr);
-        break;
+	case SPI_ID:
+//		spi_flash_id(pdev,ep_addr);
+		break;
+	case SPI_UNIQ_ID:
+//		spi_flash_uniq_id(pdev,ep_addr);
+		break;
 	case SPI_R:
 		/* op1 = address */
 		addr=my_strtol_16(op1);
-//		USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)&addr,4); HAL_Delay(50);
 		spi_read_mem(pdev,ep_addr,addr);//*((uint32_t*)&op1[0]));
 		break;
 	case SPI_W:
 		/* op1 = address, op2 = data */
-		addr=my_strtol_16(op1);
-		data=my_strtol_16(op2);
-//		USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)&addr,4); HAL_Delay(50);
-//		USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)&data,4); HAL_Delay(50);
-		spi_write_mem(pdev,ep_addr,addr,data);//*(uint32_t*)&op1[0],*((uint32_t*)&op2[0]));
+		addr = my_strtol_16(op1);
+		data = my_strtol_16(op2);
+//		W25qxx_WriteByte(data, addr);
 		break;
+	case SPI_PAGE_W:
+		/* op1 = address, op2 = data */
+		addr=my_strtol_16(op1);
+		page_write_length = my_long_strtol_16(op2, buffer, 514 /*PAGE_SIZE*2*/ /* 512 characters that are 256 bytes */);
+//		USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)&page_write_length, 4); HAL_Delay(50);
+//		USBD_LL_Transmit(pdev,ep_addr,(uint8_t *)buffer,page_write_length); HAL_Delay(300);
+		W25qxx_WritePage(buffer, addr >> 8, addr & 0xff, page_write_length);
+		break;
+
 	case SPI_ERASE_CHIP:
 		USBD_LL_Transmit(pdev,ep_addr,(uint8_t*)"Starting SPI chip erase...",26); HAL_Delay(10);
 		W25qxx_EraseChip();
@@ -751,14 +727,11 @@ static uint8_t USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
 				int8_t *buff = (int8_t *)hcdc->OutboundBuffer;
 				for (i = 0 ; i < (int)RxLength; i++ ){
 					vcp_rx[writePointerRx] = buff[i];
-// This will echo the command back					USBD_LL_Transmit(pdev,parameters[index].data_in_ep,(uint8_t*)&buff[i],1); HAL_Delay(10);
 					if ((buff[i] == '\n') || (writePointerRx == (BUF_SIZE-1))) {
 						vcp_rx[writePointerRx] = 0;
-#if 1
 						vcp_cmd_control(pdev, parameters[index].data_in_ep,
 							       vcp_rx,
 							       writePointerRx + 1);
-#endif
 						memset(vcp_rx, 0, BUF_SIZE);
 						writePointerRx = 0;
 						
