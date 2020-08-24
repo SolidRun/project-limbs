@@ -5,7 +5,7 @@
 adjust these to suit the application
 */
 #define NUM_OF_CDC_UARTS                    2
-# define ADC_ENABLE 1
+//# define ADC_ENABLE 1
 #define ADC_IT_MODE 0
 /* calculate voltage ADC factore
   Vin = (ADC_RESOLUTION * ADC_Value[12Bit]) * (R1+R2/R2)

@@ -23,19 +23,20 @@ uint8_t	W25qxx_Spi(uint8_t	Data)
 	uint8_t	counter=40; // help counter for send cmd time out
 	/* Wait until the SPI flash is ready */
 	while ((HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY)){
+//		while (1){}; // Remove me
 		counter=counter-1;
 		HAL_Delay(1);
 		if(counter == 10)
 		{
-			MX_SPI1_Init();
+//			MX_SPI1_Init();
 			HAL_Delay(10);
 		}
 		if(counter <= 0)
 		{
-			char * str="TE"; /*Time out ERROR Message*/
+//			char * str="TE"; /*Time out ERROR Message*/
 //			debug_message(str,2);
 			HAL_Delay(10);
-			MX_SPI1_Init();
+//			MX_SPI1_Init();
 			HAL_Delay(10);
 			break;
 		}
@@ -480,18 +481,18 @@ void W25qxx_WriteByte(uint8_t pBuffer, uint32_t WriteAddr_inBytes)
 	w25qxx.Lock=1;
 //	HAL_Delay(100);
 	W25qxx_WaitForWriteEnd();
-  W25qxx_WriteEnable();
+	W25qxx_WriteEnable();
 //	HAL_Delay(120);
-  SELECT();
-  W25qxx_Spi(sFLASH_CMD_WRITE);
+	SELECT();
+	W25qxx_Spi(sFLASH_CMD_WRITE);
 	if(w25qxx.ID>=W25Q256)
 		W25qxx_Spi((WriteAddr_inBytes & 0xFF000000) >> 24);
-  W25qxx_Spi((WriteAddr_inBytes & 0xFF0000) >> 16);
-  W25qxx_Spi((WriteAddr_inBytes & 0xFF00) >> 8);
-  W25qxx_Spi(WriteAddr_inBytes & 0xFF);
-  W25qxx_Spi(pBuffer);
+	W25qxx_Spi((WriteAddr_inBytes & 0xFF0000) >> 16);
+	W25qxx_Spi((WriteAddr_inBytes & 0xFF00) >> 8);
+	W25qxx_Spi(WriteAddr_inBytes & 0xFF);
+	W25qxx_Spi(pBuffer);
 	DESELECT();
-  W25qxx_WaitForWriteEnd();
+	W25qxx_WaitForWriteEnd();
 	w25qxx.Lock=0;
 
 }
