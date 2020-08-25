@@ -87,6 +87,10 @@ make clean && make
 ```
 The binaries output will be under ./src/build (stm32cdc.bin, .elf, .hex)
 
+#### Elf2dfuse :
+This tool is a possible aid for STM32 developers who want to generate a DfuSe image directly from a STM32 ELF object file.
+The source code for the elf2dfuse here https://github.com/majbthrd/elf2dfuse
+
 ## Flashing the binares to your MCU :
 If using HoneyComb / ClearFog CX board; perform the following -
 - Place a jumper J5017 (near the micro USB connectors). This jumper will force the STM32 to boot in DFU mode.
