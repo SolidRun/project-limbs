@@ -112,10 +112,10 @@ If using HoneyComb / ClearFog CX board; perform the following :
 
 - Place a jumper J5017 (near the micro USB connectors). This jumper will force the STM32 to boot in DFU mode.
 - Connect your PC to your board by plugging a USB to micro USB cable from your PC to the micro USB connector marked as 'Management'.
-- You can use `dfu-util` - Device firmware update (DFU) USB programmer to flash the FW to the MCU STM32,
-[dfu tool descriptor]( http://manpages.ubuntu.com/manpages/xenial/man1/dfu-util.1.html)
+- You can use `dfu-util` - Device Firmware Update (DFU) USB programmer to flash the FW to the MCU STM32,
+[dfu tool man page]( http://manpages.ubuntu.com/manpages/xenial/man1/dfu-util.1.html)
 
-Then run the command bellow  :
+Then run the command below  :
 
 ```
 # flashing the binaries and boot the MCU
