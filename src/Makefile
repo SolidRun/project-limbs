@@ -11,7 +11,7 @@ OBJCOPY		= $(CROSS_COMPILE)objcopy
 SIZE		= $(CROSS_COMPILE)size
 
 CFLAGS += -W -Wall --std=gnu99 -Os
-CFLAGS += -fno-diagnostics-show-caret
+CFLAGS += -flto -fno-diagnostics-show-caret
 CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -funsigned-char -funsigned-bitfields
 CFLAGS += -mcpu=cortex-m0 -mthumb
@@ -19,7 +19,9 @@ CFLAGS += -MD -MP -MT $(BUILD)/$(*F).o -MF $(BUILD)/$(@F).d
 CFLAGS += -g3
 CFLAGS += -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable # suppress warnings that happen OFTEN with STM32 library code
 
+LDFLAGS += --specs=nano.specs -nostartfiles
 LDFLAGS += -mcpu=cortex-m0 -mthumb
+LDFLAGS += -flto -fno-fat-lto-objects
 LDFLAGS += -Wl,--gc-sections
 LDFLAGS += -Wl,--script=./linker/stm32f042x4.ld
 #stm32f072xB.ld
