@@ -649,7 +649,6 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
   /* Increasing the CPU frequency */
   if(FLatency > (FLASH->ACR & FLASH_ACR_LATENCY))
   {
-	  while(1){}; // this code seems not used; so compile it out
     /* Program the new number of wait states to the LATENCY bits in the FLASH_ACR register */
     __HAL_FLASH_SET_LATENCY(FLatency);
 
