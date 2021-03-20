@@ -36,8 +36,8 @@ The following commands can be executed :
 	sw - SPI Write byte - syntax is 'sw 0x0 0x0'
 	sp - SPI Page Write - syntax is 'sp 0x0 0x11223344556677..' - the 0x0 is the full address and the value is up to 256Bytes (full page)
 	se - Erase SPI flash
-  ee - Enable STM32 commands echo
-  ed - Disable STM32 commands echo (useful when flashing SPI image)
+  	ee - Enable STM32 commands echo
+  	ed - Disable STM32 commands echo (useful when flashing SPI image)
 ```
 
 ### Reading SPI ID example
