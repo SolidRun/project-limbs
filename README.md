@@ -27,7 +27,7 @@ The following commands can be executed :
 	vn - Connect vbat transistor
 	vf - Disconnect vbat transistor
 	cu - Report current measurement
-	vo - Report voltage measreuemtn
+	vo - Report voltage measurement
 	ss - Connect SPI ROM to STM32
 	sc - Connect SPI ROM to COM express
 	si - Report SPI ID
