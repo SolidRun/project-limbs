@@ -11,7 +11,7 @@ HAL and LL APIs are available under open-source BSD license for user convenience
 * ACM0 - MCU UART1 - connected to COM express SER0 console
 * ACM1 - MCU VCP ( Virtual com port)
 
-### VCP Command controll :
+### VCP Command control :
 
 In order to use the commands; open a terminal emulator like minicom, putty and point to /dev/ttyACM1 (assuming first and second ACM are /dev/ttyACM0 and /dev/ttyACM1).
 
