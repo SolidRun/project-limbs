@@ -106,7 +106,7 @@ This tool is a possible aid for STM32 developers who want to generate a DfuSe im
 
 The source code for the `elf2dfuse` here <https://github.com/majbthrd/elf2dfuse>.
 
-## Flashing the binares to your MCU
+## Flashing the binaries to your MCU
 
 If using HoneyComb / ClearFog CX board; perform the following :
 
