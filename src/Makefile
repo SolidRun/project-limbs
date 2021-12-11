@@ -18,6 +18,7 @@ CFLAGS += -mcpu=cortex-m0 -mthumb
 CFLAGS += -MD -MP -MT $(BUILD)/$(*F).o -MF $(BUILD)/$(@F).d
 CFLAGS += -g3
 CFLAGS += -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable # suppress warnings that happen OFTEN with STM32 library code
+CFLAGS += -flto
 
 LDFLAGS += -mcpu=cortex-m0 -mthumb
 LDFLAGS += -Wl,--gc-sections
